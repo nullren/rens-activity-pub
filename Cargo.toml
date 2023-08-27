@@ -6,6 +6,9 @@ version = "0.2.0"
 authors = ["Renning Bruns <ren@renmail.net>"]
 description = "Ren's ActivityPub stuff"
 
+[workspace.dependencies]
+clap = { version = "4", features = ["default", "derive", "env"] }
+
 [package]
 name = "rens-activity-pub"
 version.workspace = true
