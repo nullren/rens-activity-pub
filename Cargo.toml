@@ -1,8 +1,10 @@
+[workspace]
+members = ["rap-*"]
+
 [package]
 name = "rens-activity-pub"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Renning Bruns <ren@renmail.net>"]
 
 [dependencies]

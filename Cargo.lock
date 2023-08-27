@@ -3,5 +3,12 @@
 version = 3
 
 [[package]]
+name = "rap-client-cli"
+version = "0.1.0"
+dependencies = [
+ "rens-activity-pub",
+]
+
+[[package]]
 name = "rens-activity-pub"
 version = "0.1.0"
