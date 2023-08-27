@@ -573,6 +573,7 @@ dependencies = [
  "axum",
  "hyper",
  "rens-activity-pub",
+ "serde_json",
  "tokio",
  "tower",
 ]
