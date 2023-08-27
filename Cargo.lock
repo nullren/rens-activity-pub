@@ -571,6 +571,7 @@ name = "rap-server"
 version = "0.2.0"
 dependencies = [
  "axum",
+ "clap",
  "hyper",
  "rens-activity-pub",
  "serde_json",

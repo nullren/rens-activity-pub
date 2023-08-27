@@ -12,3 +12,4 @@ rens-activity-pub = { path = ".." }
 serde_json = "1.0.105"
 tokio = { version = "1.32.0", features = ["full"] }
 tower = "0.4.13"
+clap = { workspace = true }
