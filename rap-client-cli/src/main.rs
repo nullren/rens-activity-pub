@@ -21,16 +21,28 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// does testing things
-    Test {
-        /// lists test values
+    /// Get the actor profile from an ID
+    Actor {
         #[arg(short, long)]
-        list: bool,
+        id: String,
     },
 }
 fn main() {
     let cli = Cli::parse();
-    println!("{:#?}", cli);
 
-    println!("Hello, world! {}", rens_activity_pub::add(2, 40));
+    match cli.command {
+        Some(Commands::Actor { id }) => {
+            let resp = reqwest::blocking::Client::new()
+                .get(&id)
+                .header("Accept", "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\"")
+                .send()
+                .unwrap();
+            let resp = resp.json::<rens_activity_pub::types::Actor>().unwrap();
+            println!("{:#?}", resp)
+        },
+        None => {
+            println!("Hello, world! {}", rens_activity_pub::add(2, 40));
+        },
+    }
+
 }
