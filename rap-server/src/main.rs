@@ -8,7 +8,7 @@ use serde_json::{Value, json};
 
 // `&'static str` becomes a `200 OK` with `content-type: text/plain; charset=utf-8`
 async fn plain_text() -> &'static str {
-    "foo"
+    "boo!"
 }
 
 // `Json` gives a content-type of `application/json` and works with any type
@@ -34,6 +34,7 @@ async fn main() {
     let cli = Cli::parse();
 
     let app = Router::new()
+        .route("/", get(plain_text))
         .route("/plain_text", get(plain_text))
         .route("/json", get(json));
 
