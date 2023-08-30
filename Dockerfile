@@ -1,15 +1,8 @@
-FROM rust:1 AS chef
-RUN cargo install cargo-chef
+FROM rust:1 AS base
 WORKDIR /app
 
-FROM chef AS planner
-COPY rap-server .
-RUN cargo chef prepare  --recipe-path recipe.json
-
-FROM chef AS builder
-COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
-COPY rap-server .
+FROM base AS builder
+COPY . .
 RUN cargo build --release -p rap-server
 
 FROM debian:bullseye-slim AS runtime
