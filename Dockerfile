@@ -9,4 +9,6 @@ FROM debian:bookworm-slim AS runtime
 RUN apt update -y && apt install -y ca-certificates
 WORKDIR app
 COPY --from=builder /app/target/release/rap-server /usr/local/bin
+
+ENV RUST_LOG=debug
 CMD ["/usr/local/bin/rap-server"]

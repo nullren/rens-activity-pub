@@ -32,6 +32,7 @@ struct Cli {
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
     let cli = Cli::parse();
 
     let (prometheus_layer, metric_handle) = PrometheusMetricLayerBuilder::new()
@@ -47,7 +48,7 @@ async fn main() {
         .layer(prometheus_layer);
 
     let addr = format!("{}:{}", cli.address, cli.port);
-    println!("Listening on {}", addr);
+    log::info!("Listening on {}", addr);
 
     let addr = addr.parse().unwrap();
     axum::Server::bind(&addr)
