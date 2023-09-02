@@ -4,8 +4,8 @@ mod webfinger;
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
-use axum::{middleware, response::Json, routing::get, Router};
 use axum::routing::post;
+use axum::{middleware, response::Json, routing::get, Router};
 use axum_prometheus::PrometheusMetricLayerBuilder;
 use clap::Parser;
 use serde_json::{json, Value};
@@ -54,8 +54,8 @@ async fn main() {
         .route("/metrics", get(|| async move { metric_handle.render() }))
         .layer(
             ServiceBuilder::new()
-                .layer(prometheus_layer)
-                .layer(middleware::from_fn(request_logger)),
+                .layer(middleware::from_fn(request_logger))
+                .layer(prometheus_layer),
         );
 
     let addr = format!("{}:{}", cli.address, cli.port);
