@@ -1,12 +1,13 @@
+mod users;
 mod webfinger;
 
-use axum::{routing::get, response::Json, Router, middleware};
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
+use axum::{middleware, response::Json, routing::get, Router};
 use axum_prometheus::PrometheusMetricLayerBuilder;
 use clap::Parser;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use tower::ServiceBuilder;
 
 // `&'static str` becomes a `200 OK` with `content-type: text/plain; charset=utf-8`
@@ -46,13 +47,14 @@ async fn main() {
         .route("/", get(plain_text))
         .route("/.well-known/webfinger", get(webfinger::json))
         .route("/.well-known/host-meta", get(json))
+        .route("/users/:id", get(json))
         .route("/plain_text", get(plain_text))
         .route("/json", get(json))
         .route("/metrics", get(|| async move { metric_handle.render() }))
         .layer(
             ServiceBuilder::new()
                 .layer(prometheus_layer)
-                .layer(middleware::from_fn(request_logger))
+                .layer(middleware::from_fn(request_logger)),
         );
 
     let addr = format!("{}:{}", cli.address, cli.port);
@@ -89,4 +91,3 @@ async fn request_logger<B>(
     );
     Ok(response)
 }
-

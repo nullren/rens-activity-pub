@@ -1,5 +1,5 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Actor {
@@ -30,4 +30,3 @@ pub struct Media {
     media_type: String,
     url: String,
 }
-

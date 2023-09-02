@@ -11,18 +11,17 @@ pub struct Webfinger {
 
 pub async fn json(webfinger: Query<Webfinger>) -> Json<Value> {
     Json(json!({
-  "subject": "acct:ren@ap.rens.page",
-  "aliases": [
-    "https://ap.rens.page/@Ren",
-    "https://ap.rens.page/users/Ren"
-  ],
-  "links": [
-    {
-      "rel": "self",
-      "type": "application/activity+json",
-      "href": "https://ap.rens.page/users/Ren"
-    }
-  ]
-}))
+      "subject": "acct:ren@ap.rens.page",
+      "aliases": [
+        "https://ap.rens.page/@Ren",
+        "https://ap.rens.page/users/Ren"
+      ],
+      "links": [
+        {
+          "rel": "self",
+          "type": "application/activity+json",
+          "href": "https://ap.rens.page/users/Ren"
+        }
+      ]
+    }))
 }
-

@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -34,15 +34,17 @@ fn main() {
         Some(Commands::Actor { id }) => {
             let resp = reqwest::blocking::Client::new()
                 .get(&id)
-                .header("Accept", "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\"")
+                .header(
+                    "Accept",
+                    "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\"",
+                )
                 .send()
                 .unwrap();
             let resp = resp.json::<rens_activity_pub::types::Actor>().unwrap();
             println!("{:#?}", resp)
-        },
+        }
         None => {
             println!("Hello, world! {}", rens_activity_pub::add(2, 40));
-        },
+        }
     }
-
 }
