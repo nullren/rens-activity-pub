@@ -76,11 +76,11 @@ async fn request_logger<B>(
     let response = next.run(request).await;
     // log request and response details here
     log::info!(
-        "{} {} {} {} {}ms",
-        response.status(),
+        "{} {}?{} ({} {}ms)",
         method,
         path,
         query,
+        response.status(),
         start.elapsed().as_millis()
     );
     Ok(response)
