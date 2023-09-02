@@ -1,3 +1,5 @@
+mod webfinger;
+
 use axum::{routing::get, response::Json, Router, middleware};
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
@@ -42,6 +44,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(plain_text))
+        .route("/.well-known/webfinger", get(webfinger::json))
+        .route("/.well-known/host-meta", get(json))
         .route("/plain_text", get(plain_text))
         .route("/json", get(json))
         .route("/metrics", get(|| async move { metric_handle.render() }))
