@@ -13,4 +13,4 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 tower = "0.4"
 clap = { workspace = true }
-axum-prometheus = "0.3"
+axum-prometheus = "0.4"

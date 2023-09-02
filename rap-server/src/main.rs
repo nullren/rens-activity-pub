@@ -3,7 +3,7 @@ use axum::{
     response::Json,
     Router,
 };
-use axum_prometheus::{PrometheusMetricLayer, PrometheusMetricLayerBuilder};
+use axum_prometheus::PrometheusMetricLayerBuilder;
 use clap::Parser;
 use serde_json::{Value, json};
 
@@ -36,6 +36,7 @@ async fn main() {
 
     let (prometheus_layer, metric_handle) = PrometheusMetricLayerBuilder::new()
         .with_prefix("rap_server")
+        .with_default_metrics()
         .build_pair();
 
     let app = Router::new()
