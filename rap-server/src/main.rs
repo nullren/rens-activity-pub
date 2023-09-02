@@ -21,11 +21,11 @@ async fn json() -> Json<Value> {
 #[command(author, version, about, long_about = None)]
 struct Cli {
     /// Address to listen on
-    #[arg(short, long, default_value = "0.0.0.0")]
+    #[arg(short, long, env, default_value = "0.0.0.0")]
     address: String,
 
     /// Port to listen on
-    #[arg(short, long, default_value = "3000")]
+    #[arg(short, long, env, default_value = "3000")]
     port: String,
 }
 
@@ -38,7 +38,10 @@ async fn main() {
         .route("/plain_text", get(plain_text))
         .route("/json", get(json));
 
-    let addr = format!("{}:{}", cli.address, cli.port).parse().unwrap();
+    let addr = format!("{}:{}", cli.address, cli.port);
+    println!("Listening on {}", addr);
+
+    let addr = addr.parse().unwrap();
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
