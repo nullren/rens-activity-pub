@@ -5,6 +5,7 @@ use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
 use axum::{middleware, response::Json, routing::get, Router};
+use axum::routing::post;
 use axum_prometheus::PrometheusMetricLayerBuilder;
 use clap::Parser;
 use serde_json::{json, Value};
@@ -46,9 +47,8 @@ async fn main() {
     let app = Router::new()
         .route("/", get(plain_text))
         .route("/.well-known/webfinger", get(webfinger::json))
-        .route("/.well-known/host-meta", get(json))
         .route("/users/:id", get(users::json))
-        .route("/users/:id/inbox", get(json))
+        .route("/users/:id/inbox", post(json))
         .route("/plain_text", get(plain_text))
         .route("/json", get(json))
         .route("/metrics", get(|| async move { metric_handle.render() }))
