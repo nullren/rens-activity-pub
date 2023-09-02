@@ -17,3 +17,5 @@ clap = { workspace = true }
 axum-prometheus = "0.4"
 log = "0.4"
 env_logger = "0.10"
+rsa = { version = "0.9", features = ["serde", "pem"] }
+rand = "0.8.5"

@@ -1,5 +1,6 @@
 mod users;
 mod webfinger;
+mod key;
 
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
