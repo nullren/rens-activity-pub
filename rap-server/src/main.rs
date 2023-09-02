@@ -3,6 +3,7 @@ use axum::{
     response::Json,
     Router,
 };
+use axum_prometheus::{PrometheusMetricLayer, PrometheusMetricLayerBuilder};
 use clap::Parser;
 use serde_json::{Value, json};
 
@@ -33,10 +34,16 @@ struct Cli {
 async fn main() {
     let cli = Cli::parse();
 
+    let (prometheus_layer, metric_handle) = PrometheusMetricLayerBuilder::new()
+        .with_prefix("rap_server")
+        .build_pair();
+
     let app = Router::new()
         .route("/", get(plain_text))
         .route("/plain_text", get(plain_text))
-        .route("/json", get(json));
+        .route("/json", get(json))
+        .route("/metrics", get(|| async move { metric_handle.render() }))
+        .layer(prometheus_layer);
 
     let addr = format!("{}:{}", cli.address, cli.port);
     println!("Listening on {}", addr);
