@@ -78,9 +78,9 @@ mod tests {
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Signature {
-    key_id: String,
-    headers: Vec<String>,
-    signature: String,
+    pub key_id: String,
+    pub headers: Vec<String>,
+    pub signature: String,
 }
 
 impl Signature {

@@ -1,6 +1,7 @@
 extern crate core;
 
 mod config;
+mod inbox;
 mod key;
 mod signature;
 mod users;
