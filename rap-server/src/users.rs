@@ -1,30 +1,84 @@
 use axum::extract::Path;
-use axum::Json;
+use axum::{Extension, Json};
 use serde_json::{json, Value};
+use std::collections::HashMap;
+use std::error::Error;
+use std::process::id;
+use std::sync::{Arc, Mutex};
 
-use serde::Deserialize;
+use crate::key;
+use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize)]
-pub struct Actor {
+type PersonId = String;
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct Person {
     id: String,
+    key: key::Key,
 }
 
-pub async fn json(actor: Path<Actor>) -> Json<Value> {
-    Json(json!({
-        "@context": [
-            "https://www.w3.org/ns/activitystreams",
-            "https://w3id.org/security/v1"
-        ],
+impl Person {
+    pub fn new(id: String) -> Result<Self, Box<dyn Error>> {
+        Ok(Self {
+            id,
+            key: key::Key::new(id.clone())?,
+        })
+    }
+}
 
-        "id": "https://ap.rens.page/users/Ren",
-        "type": "Person",
-        "preferredUsername": "Ren",
-        "inbox": "https://ap.rens.page/users/Ren/inbox",
+#[derive(Clone)]
+pub struct PeopleStore {
+    lookup: Arc<Mutex<HashMap<PersonId, Person>>>,
+}
 
-        "publicKey": {
-            "id": "https://ap.rens.page/users/Ren#main-key",
-            "owner": "https://ap.rens.page/users/Ren",
-            "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3HVjbmnBo/pEgmEe+Hre\nxR9GaVWUlIj49L5PvlgOZp2Q4qZP1+DLwkMwE7jIqeH1z3d/5AahWQdb/MmO+Khp\nOkEisUzcJJlaWTEsKNJ6IxLmYsxhdRAz2/RgwTAGMfvXiIowl++ZUXBwsMvztzDl\nZ9NWOvfZQqTXOGGafePLHIS+Nv/Eu1+/u2W8mZJA7uAahFjXMNbefDIkACWVbzIv\n/2VnYG28NACrshyjdtLQ6+8/ypgnbejehRcP/UIAGfBBNyhlhaHAmHCWNNfwoNpF\n3Vz3J+q/QV6flA3egdVHerz25+gSOraUrB2xKbDJqeGJZaZmq8Zn1EyxrQTJFutv\newIDAQAB\n-----END PUBLIC KEY-----\n"
+impl PeopleStore {
+    pub fn new() -> Self {
+        Self {
+            lookup: Arc::new(Mutex::new(HashMap::new())),
         }
-    }))
+    }
+
+    // TODO: This should be in a database
+    pub async fn add(&self, person: Person) -> Result<(), Box<dyn Error>> {
+        let mut lookup = self.lookup.lock()?;
+        lookup.insert(person.id.clone(), person);
+        Ok(())
+    }
+
+    // TODO: This should be in a database
+    pub async fn get(&self, id: &PersonId) -> Result<Option<&Person>, Box<dyn Error>> {
+        let lookup = self.lookup.lock()?;
+        Ok(lookup.get(id))
+    }
+
+    pub async fn get_or_create(&self, id: &PersonId) -> Result<&Person, Box<dyn Error>> {
+        let mut lookup = self.lookup.lock()?;
+        if let Some(person) = lookup.get(id) {
+            return Ok(person);
+        }
+        let person = Person::new(id.clone())?;
+        lookup.insert(id.clone(), person.clone());
+        Ok(lookup.get(id).unwrap())
+    }
+}
+
+pub async fn json(
+    actor: Path<PersonId>,
+    Extension(peopleStore): Extension<PeopleStore>,
+) -> Json<Value> {
+    if let Some(person) = peopleStore.get_or_create(&actor).await.unwrap() {
+        return Json(json!({
+            "@context": [
+                "https://www.w3.org/ns/activitystreams",
+                "https://w3id.org/security/v1"
+            ],
+
+            "id": person.id,
+            "type": "Person",
+            "inbox": format!("{}/inbox", person.id),
+
+            "publicKey": person.key.public_key().unwrap(),
+        }));
+    }
+    Json(json!({}))
 }

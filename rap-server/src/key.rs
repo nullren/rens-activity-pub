@@ -1,5 +1,6 @@
 use rsa::{pkcs8::EncodePublicKey, RsaPrivateKey};
 use serde::{Deserialize, Serialize};
+use std::error::Error;
 
 const BITS: usize = 2048;
 
@@ -19,21 +20,20 @@ pub struct PublicKey {
 }
 
 impl Key {
-    pub fn new(owner: String) -> Self {
+    pub fn new(owner: String) -> Result<Self, Box<dyn Error>> {
         let mut rng = rand::thread_rng();
-        let private_key = RsaPrivateKey::new(&mut rng, BITS).unwrap();
-        Self { owner, private_key }
+        let private_key = RsaPrivateKey::new(&mut rng, BITS)?;
+        Ok(Self { owner, private_key })
     }
 
-    pub fn public_key(&self) -> PublicKey {
-        PublicKey {
+    pub fn public_key(&self) -> Result<PublicKey, Box<dyn Error>> {
+        Ok(PublicKey {
             id: format!("{}/#main-key", self.owner),
             owner: self.owner.clone(),
             public_key_pem: self
                 .private_key
                 .to_public_key()
-                .to_public_key_pem(rsa::pkcs8::LineEnding::LF)
-                .unwrap(),
-        }
+                .to_public_key_pem(rsa::pkcs8::LineEnding::LF)?,
+        })
     }
 }

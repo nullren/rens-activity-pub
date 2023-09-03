@@ -1,18 +1,23 @@
 extern crate core;
 
-mod users;
-mod webfinger;
 mod key;
 mod signature;
+mod users;
+mod webfinger;
 
+use crate::users::PeopleStore;
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
 use axum::routing::post;
-use axum::{middleware, response::Json, routing::get, Router};
+use axum::{middleware, response::Json, routing::get, Extension, Router};
 use axum_prometheus::PrometheusMetricLayerBuilder;
 use clap::Parser;
 use serde_json::{json, Value};
+use std::collections::HashMap;
+use std::error::Error;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tower::ServiceBuilder;
 
 // `&'static str` becomes a `200 OK` with `content-type: text/plain; charset=utf-8`
@@ -59,7 +64,8 @@ async fn main() {
         .layer(
             ServiceBuilder::new()
                 .layer(middleware::from_fn(request_logger))
-                .layer(prometheus_layer),
+                .layer(prometheus_layer)
+                .layer(Extension(Arc::new(PeopleStore::new()))),
         );
 
     let addr = format!("{}:{}", cli.address, cli.port);

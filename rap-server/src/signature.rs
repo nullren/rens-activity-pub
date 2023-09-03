@@ -1,4 +1,3 @@
-use std::error::Error;
 use axum::http::HeaderMap;
 use nom::combinator::map;
 use nom::{
@@ -9,6 +8,7 @@ use nom::{
     IResult,
 };
 use serde::{Deserialize, Serialize};
+use std::error::Error;
 
 fn token(input: &str) -> IResult<&str, &str> {
     nom::character::complete::multispace0(input)?;
