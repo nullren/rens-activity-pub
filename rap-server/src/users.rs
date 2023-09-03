@@ -1,9 +1,10 @@
 use axum::extract::Path;
 use axum::http::StatusCode;
-use axum::Json;
+use axum::{Extension, Json};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::error::Error;
+use std::sync::Arc;
 
 use crate::key;
 use serde::{Deserialize, Serialize};
@@ -32,11 +33,14 @@ impl Person {
     }
 }
 
-pub async fn json(Path(actor): Path<PersonId>) -> Result<Json<Value>, (StatusCode, String)> {
-    let person = Person::new(actor).map_err(|e| {
+pub async fn json(
+    Path(actor): Path<PersonId>,
+    Extension(people): Extension<Arc<dyn PeopleStore>>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let person = people.get_or_create(&actor).await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Error creating person: {}", e),
+            format!("Error getting person: {}", e),
         )
     })?;
     Ok(Json(json!({
