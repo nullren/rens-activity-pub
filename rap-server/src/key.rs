@@ -4,14 +4,14 @@ use std::error::Error;
 
 const BITS: usize = 2048;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Key {
     owner: String,
     #[serde(rename = "privateKey")]
     private_key: RsaPrivateKey,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PublicKey {
     id: String,
     owner: String,

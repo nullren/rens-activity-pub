@@ -3,7 +3,6 @@ use axum::{Extension, Json};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::error::Error;
-use std::process::id;
 use std::sync::{Arc, Mutex};
 
 use crate::key;
@@ -11,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 type PersonId = String;
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Person {
     id: String,
     key: key::Key,
@@ -39,19 +38,19 @@ impl PeopleStore {
     }
 
     // TODO: This should be in a database
-    pub async fn add(&self, person: Person) -> Result<(), Box<dyn Error>> {
+    pub async fn add(&self, person: Person) -> Result<(), Box<dyn Error + '_>> {
         let mut lookup = self.lookup.lock()?;
         lookup.insert(person.id.clone(), person);
         Ok(())
     }
 
     // TODO: This should be in a database
-    pub async fn get(&self, id: &PersonId) -> Result<Option<&Person>, Box<dyn Error>> {
+    pub async fn get(&self, id: &PersonId) -> Result<Option<&Person>, Box<dyn Error + '_>> {
         let lookup = self.lookup.lock()?;
         Ok(lookup.get(id))
     }
 
-    pub async fn get_or_create(&self, id: &PersonId) -> Result<&Person, Box<dyn Error>> {
+    pub async fn get_or_create(&self, id: &PersonId) -> Result<&Person, Box<dyn Error + '_>> {
         let mut lookup = self.lookup.lock()?;
         if let Some(person) = lookup.get(id) {
             return Ok(person);
@@ -66,19 +65,17 @@ pub async fn json(
     actor: Path<PersonId>,
     Extension(peopleStore): Extension<PeopleStore>,
 ) -> Json<Value> {
-    if let Some(person) = peopleStore.get_or_create(&actor).await.unwrap() {
-        return Json(json!({
-            "@context": [
-                "https://www.w3.org/ns/activitystreams",
-                "https://w3id.org/security/v1"
-            ],
+    let person = peopleStore.get_or_create(&actor).await.unwrap();
+    return Json(json!({
+        "@context": [
+            "https://www.w3.org/ns/activitystreams",
+            "https://w3id.org/security/v1"
+        ],
 
-            "id": person.id,
-            "type": "Person",
-            "inbox": format!("{}/inbox", person.id),
+        "id": person.id,
+        "type": "Person",
+        "inbox": format!("{}/inbox", person.id),
 
-            "publicKey": person.key.public_key().unwrap(),
-        }));
-    }
-    Json(json!({}))
+        "publicKey": person.key.public_key().unwrap(),
+    }));
 }

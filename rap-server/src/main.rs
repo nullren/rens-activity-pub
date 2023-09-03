@@ -14,10 +14,7 @@ use axum::{middleware, response::Json, routing::get, Extension, Router};
 use axum_prometheus::PrometheusMetricLayerBuilder;
 use clap::Parser;
 use serde_json::{json, Value};
-use std::collections::HashMap;
-use std::error::Error;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use tower::ServiceBuilder;
 
 // `&'static str` becomes a `200 OK` with `content-type: text/plain; charset=utf-8`

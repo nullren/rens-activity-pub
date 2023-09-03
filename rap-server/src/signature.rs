@@ -1,4 +1,3 @@
-use axum::http::HeaderMap;
 use nom::combinator::map;
 use nom::{
     bytes::complete::tag,
