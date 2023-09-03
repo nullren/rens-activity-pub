@@ -1,3 +1,4 @@
+use std::error::Error;
 use axum::http::HeaderMap;
 use nom::combinator::map;
 use nom::{
@@ -7,6 +8,7 @@ use nom::{
     sequence::{delimited, pair, separated_pair, terminated},
     IResult,
 };
+use serde::{Deserialize, Serialize};
 
 fn token(input: &str) -> IResult<&str, &str> {
     nom::character::complete::multispace0(input)?;
@@ -75,7 +77,7 @@ mod tests {
     }
 }
 
-#[derive(Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Signature {
     key_id: String,
     headers: Vec<String>,
@@ -83,8 +85,8 @@ pub struct Signature {
 }
 
 impl Signature {
-    pub fn from_headers(signature: &str) -> Self {
-        let (_, params) = params(signature).unwrap();
+    pub fn from_headers(signature: &str) -> Result<Self, Box<dyn Error>> {
+        let (_, params) = params(signature)?;
         let mut key_id = None;
         let mut headers = None;
         let mut signature = None;
@@ -96,13 +98,13 @@ impl Signature {
                 _ => {}
             }
         }
-        let key_id = key_id.unwrap();
-        let headers = headers.unwrap();
-        let signature = signature.unwrap();
-        Self {
+        let key_id = key_id.ok_or("keyId not found")?;
+        let headers = headers.ok_or("headers not found")?;
+        let signature = signature.ok_or("signature not found")?;
+        Ok(Self {
             key_id: key_id.to_string(),
             headers: headers.split(" ").map(|s| s.to_string()).collect(),
             signature: signature.to_string(),
-        }
+        })
     }
 }
