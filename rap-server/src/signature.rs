@@ -83,9 +83,7 @@ pub struct Signature {
 }
 
 impl Signature {
-    pub fn from_headers(headers: HeaderMap) -> Self {
-        let signature = headers.get("signature").unwrap();
-        let signature = signature.to_str().unwrap();
+    pub fn from_headers(signature: &str) -> Self {
         let (_, params) = params(signature).unwrap();
         let mut key_id = None;
         let mut headers = None;
