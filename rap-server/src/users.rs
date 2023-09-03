@@ -17,6 +17,7 @@ pub struct Person {
 
 impl Person {
     pub fn new(id: PersonId) -> Result<Self, Box<dyn Error>> {
+        let id = format!("https://ap.rens.page/users/{}", id);
         Ok(Self {
             id: id.clone(),
             key: key::Key::new(id.clone())?,
