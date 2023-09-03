@@ -1,10 +1,12 @@
 extern crate core;
 
+mod config;
 mod key;
 mod signature;
 mod users;
 mod webfinger;
 
+use crate::config::Config;
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
@@ -13,6 +15,7 @@ use axum::{middleware, response::Json, routing::get, Extension, Router};
 use axum_prometheus::PrometheusMetricLayerBuilder;
 use clap::Parser;
 use serde_json::{json, Value};
+use std::sync::Arc;
 use tower::ServiceBuilder;
 
 // `&'static str` becomes a `200 OK` with `content-type: text/plain; charset=utf-8`
@@ -26,22 +29,10 @@ async fn json() -> Json<Value> {
     Json(json!({ "data": 42 }))
 }
 
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    /// Address to listen on
-    #[arg(short, long, env, default_value = "0.0.0.0")]
-    address: String,
-
-    /// Port to listen on
-    #[arg(short, long, env, default_value = "3000")]
-    port: String,
-}
-
 #[tokio::main]
 async fn main() {
     env_logger::init();
-    let cli = Cli::parse();
+    let cfg = Config::parse();
 
     let (prometheus_layer, metric_handle) = PrometheusMetricLayerBuilder::new()
         .with_prefix("rap_server")
@@ -59,10 +50,11 @@ async fn main() {
         .layer(
             ServiceBuilder::new()
                 .layer(middleware::from_fn(request_logger))
-                .layer(prometheus_layer),
+                .layer(prometheus_layer)
+                .layer(Extension(cfg.clone())),
         );
 
-    let addr = format!("{}:{}", cli.address, cli.port);
+    let addr = format!("{}:{}", cfg.address, cfg.port);
     log::info!("Listening on {}", addr);
 
     let addr = addr.parse().unwrap();

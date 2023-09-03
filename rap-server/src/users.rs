@@ -1,8 +1,8 @@
 use axum::extract::Path;
-use axum::{Json};
+use axum::http::StatusCode;
+use axum::Json;
 use serde_json::{json, Value};
 use std::error::Error;
-use axum::http::StatusCode;
 
 use crate::key;
 use serde::{Deserialize, Serialize};
@@ -25,9 +25,7 @@ impl Person {
     }
 }
 
-pub async fn json(
-    Path(actor): Path<PersonId>,
-) -> Result<Json<Value>, (StatusCode, String)> {
+pub async fn json(Path(actor): Path<PersonId>) -> Result<Json<Value>, (StatusCode, String)> {
     let person = Person::new(actor).map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,

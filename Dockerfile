@@ -17,4 +17,5 @@ WORKDIR app
 COPY --from=builder /app/target/release/rap-server /usr/local/bin
 
 ENV RUST_LOG=debug
+ENV DOMAIN=ap.rens.page
 CMD ["/usr/local/bin/rap-server"]
