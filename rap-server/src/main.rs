@@ -8,6 +8,7 @@ mod users;
 mod webfinger;
 
 use crate::config::Config;
+use crate::users::InMemoryPeopleStore;
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
@@ -16,6 +17,7 @@ use axum::{middleware, response::Json, routing::get, Extension, Router};
 use axum_prometheus::PrometheusMetricLayerBuilder;
 use clap::Parser;
 use serde_json::{json, Value};
+use std::sync::Arc;
 use tower::ServiceBuilder;
 
 // `&'static str` becomes a `200 OK` with `content-type: text/plain; charset=utf-8`
@@ -39,11 +41,13 @@ async fn main() {
         .with_default_metrics()
         .build_pair();
 
+    let people: Arc<dyn users::PeopleStore> = Arc::new(InMemoryPeopleStore::new());
+
     let app = Router::new()
         .route("/", get(plain_text))
         .route("/.well-known/webfinger", get(webfinger::json))
         .route("/users/:id", get(users::json))
-        .route("/users/:id/inbox", post(json))
+        .route("/users/:id/inbox", post(inbox::json))
         .route("/plain_text", get(plain_text))
         .route("/json", get(json))
         .route("/metrics", get(|| async move { metric_handle.render() }))
@@ -51,6 +55,7 @@ async fn main() {
             ServiceBuilder::new()
                 .layer(middleware::from_fn(request_logger))
                 .layer(prometheus_layer)
+                .layer(Extension(people))
                 .layer(Extension(cfg.clone())),
         );
 

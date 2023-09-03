@@ -13,12 +13,12 @@ pub type PersonId = String;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Person {
-    id: String,
-    key: key::Key,
+    pub id: String,
+    pub key: key::Key,
 }
 
 #[async_trait::async_trait]
-trait PeopleStore: Send + Sync {
+pub trait PeopleStore: Send + Sync {
     async fn get_or_create(&self, id: &PersonId) -> Result<Person, Box<dyn Error>>;
 }
 
@@ -56,12 +56,12 @@ pub async fn json(Path(actor): Path<PersonId>) -> Result<Json<Value>, (StatusCod
     })))
 }
 
-struct InMemoryPeopleStore {
+pub struct InMemoryPeopleStore {
     people: Mutex<HashMap<PersonId, Person>>,
 }
 
 impl InMemoryPeopleStore {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             people: Mutex::new(HashMap::new()),
         }
