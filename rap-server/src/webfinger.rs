@@ -2,7 +2,6 @@ use axum::extract::Query;
 use axum::http::StatusCode;
 use axum::{Extension, Json};
 use serde_json::{json, Value};
-use std::sync::Arc;
 
 use crate::Config;
 use serde::Deserialize;
