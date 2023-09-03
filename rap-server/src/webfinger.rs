@@ -9,7 +9,7 @@ pub struct Webfinger {
     resource: String,
 }
 
-pub async fn json(webfinger: Query<Webfinger>) -> Json<Value> {
+pub async fn json(_webfinger: Query<Webfinger>) -> Json<Value> {
     Json(json!({
       "subject": "acct:ren@ap.rens.page",
       "aliases": [

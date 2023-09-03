@@ -84,7 +84,7 @@ pub struct Signature {
 }
 
 impl Signature {
-    pub fn from_headers(signature: &str) -> Result<Self, Box<dyn Error>> {
+    pub fn from_headers(signature: &str) -> Result<Self, Box<dyn Error + '_>> {
         let (_, params) = params(signature)?;
         let mut key_id = None;
         let mut headers = None;
