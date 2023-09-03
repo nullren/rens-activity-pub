@@ -1,6 +1,9 @@
+extern crate core;
+
 mod users;
 mod webfinger;
 mod key;
+mod signature;
 
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
