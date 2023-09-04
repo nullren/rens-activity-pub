@@ -1,3 +1,4 @@
+use rsa::pkcs8::DecodePublicKey;
 use rsa::traits::SignatureScheme;
 use rsa::{pkcs8::EncodePublicKey, Pss, RsaPrivateKey};
 use serde::{Deserialize, Serialize};
@@ -11,14 +12,6 @@ pub struct Key {
     owner: String,
     #[serde(rename = "privateKey")]
     private_key: RsaPrivateKey,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct PublicKey {
-    id: String,
-    owner: String,
-    #[serde(rename = "publicKeyPem")]
-    public_key_pem: String,
 }
 
 impl Key {
@@ -60,6 +53,22 @@ impl Key {
 
         pss.verify(&public_key, &hashed, sig)?;
         Ok(())
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct PublicKey {
+    id: String,
+    owner: String,
+    #[serde(rename = "publicKeyPem")]
+    public_key_pem: String,
+}
+
+impl PublicKey {
+    pub fn to_rsa_public_key(&self) -> Result<rsa::RsaPublicKey, Box<dyn Error>> {
+        Ok(rsa::RsaPublicKey::from_public_key_pem(
+            &self.public_key_pem,
+        )?)
     }
 }
 

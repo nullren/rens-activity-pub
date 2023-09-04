@@ -1,4 +1,5 @@
 use crate::config::Config;
+use crate::key::PublicKey;
 use crate::signature::Signature;
 use crate::users::{PeopleStore, PersonId};
 use axum::extract::Path;
@@ -7,6 +8,7 @@ use axum::{Extension, Json};
 use base64::engine::general_purpose;
 use base64::Engine;
 use log::{error, warn};
+use rsa::Pss;
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -26,16 +28,6 @@ pub async fn json(
         )
     })?;
 
-    // TODO: get key for user by signature.key_id
-    let person = people.get_or_create(&actor).await.map_err(|e| {
-        error!("Error getting person: {}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Error getting person: {}", e),
-        )
-    })?;
-
-    let comparison = rebuild_sig_str(&actor, &headers, &signature);
     let decoded_signature = general_purpose::STANDARD
         .decode(&signature.signature)
         .map_err(|e| {
@@ -46,9 +38,23 @@ pub async fn json(
             )
         })?;
 
-    person
-        .key
-        .verify(comparison.as_bytes(), &decoded_signature)
+    let comparison = rebuild_sig_str(&actor, &headers, &signature);
+
+    // TODO: load person from signature.key_id
+    PublicKey::default()
+        .to_rsa_public_key()
+        .map_err(|e| {
+            warn!("Error creating public key: {}", e);
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Error creating public key: {}", e),
+            )
+        })?
+        .verify(
+            Pss::new::<sha2::Sha256>(),
+            comparison.as_bytes(),
+            &decoded_signature,
+        )
         .map_err(|e| {
             warn!("Error verifying signature: {}. {:?}", e, headers);
             (
@@ -58,7 +64,7 @@ pub async fn json(
         })?;
 
     // let date = chrono::Utc::now().to_rfc2822();
-    Ok(Json(json!("OK")))
+    Err((StatusCode::NOT_IMPLEMENTED, "Not implemented".to_string()))
 }
 
 fn header_str<'a>(headers: &'a HeaderMap, name: &str) -> Result<&'a str, (StatusCode, String)> {
