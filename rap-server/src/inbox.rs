@@ -13,7 +13,6 @@ pub async fn json(
     headers: HeaderMap,
     Path(actor): Path<PersonId>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    // get signature from header
     let signature = header_str(&headers, "signature")?;
     let signature = Signature::from_headers(signature).map_err(|e| {
         warn!("Error parsing signature: {}", e);
