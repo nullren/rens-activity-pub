@@ -32,12 +32,15 @@ pub async fn json(
 
     let comparison = rebuild_sig_str(&actor, &headers, &signature);
 
-    person.key.verify(comparison.as_bytes(), signature.signature.as_bytes()).map_err(|e| {
-        (
-            StatusCode::BAD_REQUEST,
-            format!("Error verifying signature: {}", e),
-        )
-    })?;
+    person
+        .key
+        .verify(comparison.as_bytes(), signature.signature.as_bytes())
+        .map_err(|e| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Error verifying signature: {}", e),
+            )
+        })?;
 
     // let date = chrono::Utc::now().to_rfc2822();
     Ok(Json(json!("OK")))
@@ -53,11 +56,7 @@ fn header_str<'a>(headers: &'a HeaderMap, name: &str) -> Result<&'a str, (Status
         })
 }
 
-fn rebuild_sig_str(
-    account: &PersonId,
-    headers: &HeaderMap,
-    signature: &Signature,
-) -> String {
+fn rebuild_sig_str(account: &PersonId, headers: &HeaderMap, signature: &Signature) -> String {
     signature
         .headers
         .iter()
@@ -76,15 +75,18 @@ fn rebuild_sig_str(
 
 #[cfg(test)]
 mod tests {
-    use axum::http::HeaderValue;
     use super::*;
+    use axum::http::HeaderValue;
 
     #[test]
     fn test_rebuild_sig_str() {
         // Create a mock HeaderMap
         let mut headers = HeaderMap::new();
         headers.insert("Host", HeaderValue::from_static("example.com"));
-        headers.insert("Date", HeaderValue::from_static("Sun, 06 Nov 2021 08:49:37 GMT"));
+        headers.insert(
+            "Date",
+            HeaderValue::from_static("Sun, 06 Nov 2021 08:49:37 GMT"),
+        );
 
         // Create a mock Signature
         let signature = Signature {
@@ -107,7 +109,9 @@ mod tests {
         // Expected signature string
         let expected_result = "(request-target): post /users/alice/inbox\nhost: example.com\ndate: Sun, 06 Nov 2021 08:49:37 GMT";
 
-        assert_eq!(result, expected_result, "Rebuilt signature string did not match expected string");
+        assert_eq!(
+            result, expected_result,
+            "Rebuilt signature string did not match expected string"
+        );
     }
-
 }

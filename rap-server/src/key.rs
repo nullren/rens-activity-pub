@@ -1,8 +1,8 @@
+use rsa::traits::SignatureScheme;
 use rsa::{pkcs8::EncodePublicKey, Pss, RsaPrivateKey};
 use serde::{Deserialize, Serialize};
-use std::error::Error;
-use rsa::traits::SignatureScheme;
 use sha2::{Digest, Sha256};
+use std::error::Error;
 
 const BITS: usize = 2048;
 
@@ -104,6 +104,9 @@ mod tests {
 
         // Try to verify with wrong data
         let verification_result = key.verify(wrong_data, &signature);
-        assert!(verification_result.is_err(), "Signature verification should fail for wrong data");
+        assert!(
+            verification_result.is_err(),
+            "Signature verification should fail for wrong data"
+        );
     }
 }
