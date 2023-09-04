@@ -30,7 +30,14 @@ pub async fn json(
         )
     })?;
 
-    let _comparison = rebuild_sig_str(&actor, &headers, &signature);
+    let comparison = rebuild_sig_str(&actor, &headers, &signature);
+
+    person.key.verify(comparison.as_bytes(), signature.signature.as_bytes()).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Error verifying signature: {}", e),
+        )
+    })?;
 
     // let date = chrono::Utc::now().to_rfc2822();
     Ok(Json(json!("OK")))
