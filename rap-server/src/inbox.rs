@@ -4,6 +4,8 @@ use crate::users::{PeopleStore, PersonId};
 use axum::extract::Path;
 use axum::http::{HeaderMap, StatusCode};
 use axum::{Extension, Json};
+use base64::engine::general_purpose;
+use base64::Engine;
 use log::{error, warn};
 use serde_json::{json, Value};
 use std::sync::Arc;
@@ -34,10 +36,19 @@ pub async fn json(
     })?;
 
     let comparison = rebuild_sig_str(&actor, &headers, &signature);
+    let decoded_signature = general_purpose::STANDARD_NO_PAD
+        .decode(&signature.signature)
+        .map_err(|e| {
+            warn!("Error decoding signature: {}", e);
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Error decoding signature: {}", e),
+            )
+        })?;
 
     person
         .key
-        .verify(comparison.as_bytes(), signature.signature.as_bytes())
+        .verify(comparison.as_bytes(), &decoded_signature)
         .map_err(|e| {
             warn!("Error verifying signature: {}. {:?}", e, headers);
             (
