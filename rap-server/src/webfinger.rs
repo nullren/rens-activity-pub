@@ -1,6 +1,7 @@
 use axum::extract::Query;
 use axum::http::StatusCode;
 use axum::{Extension, Json};
+use log::warn;
 use serde_json::{json, Value};
 
 use crate::Config;
@@ -18,7 +19,10 @@ pub async fn json(
     let domain = cfg.domain.clone();
     let resource = webfinger.resource.clone().to_lowercase();
 
-    let error = || (StatusCode::BAD_REQUEST, "Invalid resource".to_string());
+    let error = || {
+        warn!("Invalid webfinger resource");
+        (StatusCode::BAD_REQUEST, "Invalid resource".to_string());
+    }
 
     let id = resource
         .strip_prefix("acct:")

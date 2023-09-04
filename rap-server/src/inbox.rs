@@ -6,6 +6,7 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::{Extension, Json};
 use serde_json::{json, Value};
 use std::sync::Arc;
+use log::{error, warn};
 
 pub async fn json(
     headers: HeaderMap,
@@ -16,6 +17,7 @@ pub async fn json(
     // get signature from header
     let signature = header_str(&headers, "signature")?;
     let signature = Signature::from_headers(signature).map_err(|e| {
+        warn!("Error parsing signature: {}", e);
         (
             StatusCode::BAD_REQUEST,
             format!("Error parsing signature: {}", e),
@@ -24,6 +26,7 @@ pub async fn json(
 
     // TODO: get key for user by signature.key_id
     let person = people.get_or_create(&actor).await.map_err(|e| {
+        error!("Error getting person: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Error getting person: {}", e),
@@ -36,6 +39,7 @@ pub async fn json(
         .key
         .verify(comparison.as_bytes(), signature.signature.as_bytes())
         .map_err(|e| {
+            warn!("Error verifying signature: {}", e);
             (
                 StatusCode::BAD_REQUEST,
                 format!("Error verifying signature: {}", e),
@@ -49,10 +53,16 @@ pub async fn json(
 fn header_str<'a>(headers: &'a HeaderMap, name: &str) -> Result<&'a str, (StatusCode, String)> {
     headers
         .get(name)
-        .ok_or_else(|| (StatusCode::BAD_REQUEST, format!("No header {}", name)))
+        .ok_or_else(|| {
+            warn!("No header {}", name);
+            (StatusCode::BAD_REQUEST, format!("No header {}", name))
+        })
         .and_then(|h| {
             h.to_str()
-                .map_err(|_| (StatusCode::BAD_REQUEST, format!("Invalid header {}", name)))
+                .map_err(|_| {
+                    warn!("Invalid header {}", name);
+                    (StatusCode::BAD_REQUEST, format!("Invalid header {}", name))
+                })
         })
 }
 
@@ -75,6 +85,7 @@ fn rebuild_sig_str(account: &PersonId, headers: &HeaderMap, signature: &Signatur
 
 #[cfg(test)]
 mod tests {
+    use std::{assert_eq, vec};
     use super::*;
     use axum::http::HeaderValue;
 

@@ -18,6 +18,7 @@ use axum_prometheus::PrometheusMetricLayerBuilder;
 use clap::Parser;
 use serde_json::{json, Value};
 use std::sync::Arc;
+use log::info;
 use tower::ServiceBuilder;
 
 // `&'static str` becomes a `200 OK` with `content-type: text/plain; charset=utf-8`
@@ -60,7 +61,7 @@ async fn main() {
         );
 
     let addr = format!("{}:{}", cfg.address, cfg.port);
-    log::info!("Listening on {}", addr);
+    info!("Listening on {}", addr);
 
     let addr = addr.parse().unwrap();
     axum::Server::bind(&addr)
@@ -83,7 +84,7 @@ async fn request_logger<B>(
     let query = uri.query().unwrap_or("");
     let response = next.run(request).await;
     // log request and response details here
-    log::info!(
+    info!(
         "{} {}?{} ({} {}ms)",
         method,
         path,

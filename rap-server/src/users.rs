@@ -5,6 +5,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::error::Error;
 use std::sync::Arc;
+use log::error;
 
 use crate::key;
 use serde::{Deserialize, Serialize};
@@ -38,6 +39,7 @@ pub async fn json(
     Extension(people): Extension<Arc<dyn PeopleStore>>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let person = people.get_or_create(&actor).await.map_err(|e| {
+        error!("Error getting person: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Error getting person: {}", e),
