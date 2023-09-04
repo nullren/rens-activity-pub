@@ -21,7 +21,7 @@ pub async fn json(
 
     let error = || {
         warn!("Invalid webfinger resource");
-        (StatusCode::BAD_REQUEST, "Invalid resource".to_string());
+        (StatusCode::BAD_REQUEST, "Invalid resource".to_string())
     };
 
     let id = resource
