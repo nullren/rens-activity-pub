@@ -39,7 +39,7 @@ pub async fn json(
         .key
         .verify(comparison.as_bytes(), signature.signature.as_bytes())
         .map_err(|e| {
-            warn!("Error verifying signature: {}", e);
+            warn!("Error verifying signature: {}. {:?}", e, headers);
             (
                 StatusCode::BAD_REQUEST,
                 format!("Error verifying signature: {}", e),
