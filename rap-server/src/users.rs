@@ -49,6 +49,7 @@ pub async fn json(
             "https://w3id.org/security/v1"
         ],
         "id": person.id,
+        "preferredUsername": actor,
         "type": "Person",
         "inbox": format!("{}/inbox", person.id),
         "publicKey": person.key.public_key().map_err(|e| {
