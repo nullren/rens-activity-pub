@@ -42,18 +42,6 @@ impl Key {
 
         Ok(pss.sign(Some(&mut rng), &self.private_key, &hashed)?)
     }
-
-    pub fn verify(&self, data: &[u8], sig: &[u8]) -> Result<(), Box<dyn Error>> {
-        let public_key = self.private_key.to_public_key();
-        let pss = Pss::new::<sha2::Sha256>();
-
-        let mut hasher = Sha256::new();
-        hasher.update(data);
-        let hashed = hasher.finalize();
-
-        pss.verify(&public_key, &hashed, sig)?;
-        Ok(())
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -91,6 +79,18 @@ impl PublicKey {
             &self.public_key_pem,
         )?)
     }
+
+    pub fn verify(&self, data: &[u8], sig: &[u8]) -> Result<(), Box<dyn Error>> {
+        let public_key = self.to_rsa_public_key()?;
+        let pss = Pss::new::<sha2::Sha256>();
+
+        let mut hasher = Sha256::new();
+        hasher.update(data);
+        let hashed = hasher.finalize();
+
+        pss.verify(&public_key, &hashed, sig)?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -119,7 +119,10 @@ mod tests {
         let signature = key.sign(data).expect("Failed to sign data");
 
         // Verify the signature
-        let verification_result = key.verify(data, &signature);
+        let verification_result = key
+            .public_key()
+            .expect("Failed to make public key")
+            .verify(data, &signature);
         assert!(verification_result.is_ok(), "Signature verification failed");
     }
 
@@ -133,7 +136,10 @@ mod tests {
         let signature = key.sign(data).expect("Failed to sign data");
 
         // Try to verify with wrong data
-        let verification_result = key.verify(wrong_data, &signature);
+        let verification_result = key
+            .public_key()
+            .expect("Failed to make public key")
+            .verify(wrong_data, &signature);
         assert!(
             verification_result.is_err(),
             "Signature verification should fail for wrong data"

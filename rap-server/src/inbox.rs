@@ -1,14 +1,13 @@
 use crate::key::PublicKey;
 use crate::signature::Signature;
-use crate::users::{PersonId};
+use crate::users::PersonId;
 use axum::extract::Path;
 use axum::http::{HeaderMap, StatusCode};
-use axum::{Json};
+use axum::Json;
 use base64::engine::general_purpose;
 use base64::Engine;
-use log::{warn};
-use rsa::Pss;
-use serde_json::{Value};
+use log::warn;
+use serde_json::Value;
 
 pub async fn json(
     headers: HeaderMap,
@@ -45,19 +44,7 @@ pub async fn json(
                 format!("Error loading public key: {}", e),
             )
         })?
-        .to_rsa_public_key()
-        .map_err(|e| {
-            warn!("Error creating public key: {}", e);
-            (
-                StatusCode::BAD_REQUEST,
-                format!("Error creating public key: {}", e),
-            )
-        })?
-        .verify(
-            Pss::new::<sha2::Sha256>(),
-            comparison.as_bytes(),
-            &decoded_signature,
-        )
+        .verify(comparison.as_bytes(), &decoded_signature)
         .map_err(|e| {
             warn!("Error verifying signature: {}. {:?}", e, headers);
             (
