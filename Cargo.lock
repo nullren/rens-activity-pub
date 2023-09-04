@@ -1319,6 +1319,7 @@ dependencies = [
  "nom",
  "rand",
  "rens-activity-pub",
+ "reqwest",
  "rsa",
  "serde",
  "serde_json",

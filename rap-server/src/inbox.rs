@@ -1,22 +1,18 @@
-use crate::config::Config;
 use crate::key::PublicKey;
 use crate::signature::Signature;
-use crate::users::{PeopleStore, PersonId};
+use crate::users::{PersonId};
 use axum::extract::Path;
 use axum::http::{HeaderMap, StatusCode};
-use axum::{Extension, Json};
+use axum::{Json};
 use base64::engine::general_purpose;
 use base64::Engine;
-use log::{error, warn};
+use log::{warn};
 use rsa::Pss;
-use serde_json::{json, Value};
-use std::sync::Arc;
+use serde_json::{Value};
 
 pub async fn json(
     headers: HeaderMap,
     Path(actor): Path<PersonId>,
-    Extension(people): Extension<Arc<dyn PeopleStore>>,
-    Extension(_cfg): Extension<Config>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     // get signature from header
     let signature = header_str(&headers, "signature")?;
@@ -40,8 +36,15 @@ pub async fn json(
 
     let comparison = rebuild_sig_str(&actor, &headers, &signature);
 
-    // TODO: load person from signature.key_id
-    PublicKey::default()
+    PublicKey::from_remote(&signature.key_id)
+        .await
+        .map_err(|e| {
+            warn!("Error loading public key: {}", e);
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Error loading public key: {}", e),
+            )
+        })?
         .to_rsa_public_key()
         .map_err(|e| {
             warn!("Error creating public key: {}", e);

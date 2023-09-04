@@ -64,7 +64,28 @@ pub struct PublicKey {
     public_key_pem: String,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct Actor {
+    id: String,
+    inbox: String,
+    #[serde(rename = "publicKey")]
+    public_key: PublicKey,
+}
+
 impl PublicKey {
+    pub async fn from_remote(id: &str) -> Result<Self, Box<dyn Error>> {
+        let resp = reqwest::Client::new()
+            .get(id)
+            .header(
+                "Accept",
+                "application/ld+json; profile=\"http://www.w3.org/ns/activitystreams\"",
+            )
+            .send()
+            .await?;
+        let resp = resp.json::<Actor>().await?;
+        Ok(resp.public_key)
+    }
+
     pub fn to_rsa_public_key(&self) -> Result<rsa::RsaPublicKey, Box<dyn Error>> {
         Ok(rsa::RsaPublicKey::from_public_key_pem(
             &self.public_key_pem,
@@ -117,5 +138,11 @@ mod tests {
             verification_result.is_err(),
             "Signature verification should fail for wrong data"
         );
+    }
+
+    #[tokio::test]
+    async fn test_remote_public_key() {
+        let key = PublicKey::from_remote("https://hotdog.place/users/renning#main-key").await;
+        assert!(key.is_ok(), "Failed to fetch remote public key");
     }
 }
