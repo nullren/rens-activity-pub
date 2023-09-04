@@ -1,6 +1,8 @@
-use rsa::{pkcs8::EncodePublicKey, RsaPrivateKey};
+use rsa::{pkcs8::EncodePublicKey, Pss, RsaPrivateKey};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+use rsa::traits::SignatureScheme;
+use sha2::{Digest, Sha256};
 
 const BITS: usize = 2048;
 
@@ -35,5 +37,73 @@ impl Key {
                 .to_public_key()
                 .to_public_key_pem(rsa::pkcs8::LineEnding::LF)?,
         })
+    }
+
+    pub fn sign(&self, data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+        let pss = Pss::new::<sha2::Sha256>();
+        let mut rng = rand::thread_rng();
+
+        let mut hasher = Sha256::new();
+        hasher.update(data);
+        let hashed = hasher.finalize();
+
+        Ok(pss.sign(Some(&mut rng), &self.private_key, &hashed)?)
+    }
+
+    pub fn verify(&self, data: &[u8], sig: &[u8]) -> Result<(), Box<dyn Error>> {
+        let public_key = self.private_key.to_public_key();
+        let pss = Pss::new::<sha2::Sha256>();
+
+        let mut hasher = Sha256::new();
+        hasher.update(data);
+        let hashed = hasher.finalize();
+
+        pss.verify(&public_key, &hashed, sig)?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_key_creation() {
+        let key = Key::new("owner1".to_string());
+        assert!(key.is_ok(), "Key creation failed");
+    }
+
+    #[test]
+    fn test_public_key_derivation() {
+        let key = Key::new("owner2".to_string()).expect("Failed to create key");
+        let public_key = key.public_key();
+        assert!(public_key.is_ok(), "Public key derivation failed");
+    }
+
+    #[test]
+    fn test_sign_and_verify() {
+        let key = Key::new("owner3".to_string()).expect("Failed to create key");
+        let data = b"some data to sign";
+
+        // Sign the data
+        let signature = key.sign(data).expect("Failed to sign data");
+
+        // Verify the signature
+        let verification_result = key.verify(data, &signature);
+        assert!(verification_result.is_ok(), "Signature verification failed");
+    }
+
+    #[test]
+    fn test_sign_and_verify_failure() {
+        let key = Key::new("owner4".to_string()).expect("Failed to create key");
+        let data = b"some data to sign";
+        let wrong_data = b"some other data";
+
+        // Sign the data
+        let signature = key.sign(data).expect("Failed to sign data");
+
+        // Try to verify with wrong data
+        let verification_result = key.verify(wrong_data, &signature);
+        assert!(verification_result.is_err(), "Signature verification should fail for wrong data");
     }
 }
