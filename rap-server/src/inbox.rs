@@ -36,7 +36,7 @@ pub async fn json(
     })?;
 
     let comparison = rebuild_sig_str(&actor, &headers, &signature);
-    let decoded_signature = general_purpose::STANDARD_NO_PAD
+    let decoded_signature = general_purpose::STANDARD
         .decode(&signature.signature)
         .map_err(|e| {
             warn!("Error decoding signature: {}", e);
