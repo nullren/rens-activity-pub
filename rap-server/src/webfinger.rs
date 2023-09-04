@@ -22,7 +22,7 @@ pub async fn json(
     let error = || {
         warn!("Invalid webfinger resource");
         (StatusCode::BAD_REQUEST, "Invalid resource".to_string());
-    }
+    };
 
     let id = resource
         .strip_prefix("acct:")

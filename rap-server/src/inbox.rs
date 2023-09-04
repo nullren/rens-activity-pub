@@ -4,9 +4,9 @@ use crate::users::{PeopleStore, PersonId};
 use axum::extract::Path;
 use axum::http::{HeaderMap, StatusCode};
 use axum::{Extension, Json};
+use log::{error, warn};
 use serde_json::{json, Value};
 use std::sync::Arc;
-use log::{error, warn};
 
 pub async fn json(
     headers: HeaderMap,
@@ -58,11 +58,10 @@ fn header_str<'a>(headers: &'a HeaderMap, name: &str) -> Result<&'a str, (Status
             (StatusCode::BAD_REQUEST, format!("No header {}", name))
         })
         .and_then(|h| {
-            h.to_str()
-                .map_err(|_| {
-                    warn!("Invalid header {}", name);
-                    (StatusCode::BAD_REQUEST, format!("Invalid header {}", name))
-                })
+            h.to_str().map_err(|_| {
+                warn!("Invalid header {}", name);
+                (StatusCode::BAD_REQUEST, format!("Invalid header {}", name))
+            })
         })
 }
 
@@ -85,9 +84,9 @@ fn rebuild_sig_str(account: &PersonId, headers: &HeaderMap, signature: &Signatur
 
 #[cfg(test)]
 mod tests {
-    use std::{assert_eq, vec};
     use super::*;
     use axum::http::HeaderValue;
+    use std::{assert_eq, vec};
 
     #[test]
     fn test_rebuild_sig_str() {

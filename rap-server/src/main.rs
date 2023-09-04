@@ -16,9 +16,9 @@ use axum::routing::post;
 use axum::{middleware, response::Json, routing::get, Extension, Router};
 use axum_prometheus::PrometheusMetricLayerBuilder;
 use clap::Parser;
+use log::info;
 use serde_json::{json, Value};
 use std::sync::Arc;
-use log::info;
 use tower::ServiceBuilder;
 
 // `&'static str` becomes a `200 OK` with `content-type: text/plain; charset=utf-8`
