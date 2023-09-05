@@ -1,10 +1,12 @@
 use rsa::pkcs8::{DecodePublicKey, EncodePublicKey};
+// use rsa::pkcs1v15::{Signature, SigningKey, VerifyingKey};
 use rsa::pss::{Signature, SigningKey, VerifyingKey};
 use rsa::signature::{RandomizedSigner, SignatureEncoding, Verifier};
 use rsa::{RsaPrivateKey, RsaPublicKey};
 use serde::{Deserialize, Serialize};
-use sha2::Sha256;
 use std::error::Error;
+
+type DIGEST = sha2::Sha256; // can be used with rsa::pss
 
 const BITS: usize = 2048;
 
@@ -35,7 +37,7 @@ impl Key {
 
     pub fn sign(&self, data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
         let mut rng = rand::thread_rng();
-        let signer = SigningKey::<Sha256>::new(self.private_key.clone());
+        let signer = SigningKey::<DIGEST>::new(self.private_key.clone());
         let sig = signer.try_sign_with_rng(&mut rng, data)?;
         Ok(sig.to_vec())
     }
@@ -78,7 +80,7 @@ impl PublicKey {
     pub fn verify(&self, data: &[u8], sig: &[u8]) -> Result<(), Box<dyn Error>> {
         let public_key = self.to_rsa_public_key()?;
         let sig: Signature = sig.try_into()?;
-        let verifier = VerifyingKey::<Sha256>::new(public_key);
+        let verifier = VerifyingKey::<DIGEST>::new(public_key);
         verifier.verify(data, &sig)?;
         Ok(())
     }

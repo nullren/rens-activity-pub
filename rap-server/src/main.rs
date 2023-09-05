@@ -5,8 +5,8 @@ mod inbox;
 mod key;
 mod signature;
 mod users;
-mod webfinger;
 mod utils;
+mod webfinger;
 
 use crate::config::Config;
 use crate::users::InMemoryPeopleStore;

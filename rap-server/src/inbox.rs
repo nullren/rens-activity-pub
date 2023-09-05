@@ -82,13 +82,15 @@ async fn verify_headers(headers: &HeaderMap, actor: &PersonId) -> Result<(), (St
     println!("pubkey: {}", serde_json::to_string(&pubkey).unwrap());
     println!("comparison: {}", comparison);
 
-    pubkey.verify(&decoded_signature, comparison.as_bytes()).map_err(|e| {
-        warn!("Error verifying signature: {}. {:?}", e, headers);
-        (
-            StatusCode::BAD_REQUEST,
-            format!("Error verifying signature: {}", e),
-        )
-    })?;
+    pubkey
+        .verify(&decoded_signature, comparison.as_bytes())
+        .map_err(|e| {
+            warn!("Error verifying signature: {}. {:?}", e, headers);
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Error verifying signature: {}", e),
+            )
+        })?;
 
     Ok(())
 }

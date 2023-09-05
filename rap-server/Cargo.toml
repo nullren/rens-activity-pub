@@ -17,7 +17,7 @@ clap = { workspace = true }
 axum-prometheus = "0.4"
 log = "0.4"
 env_logger = "0.10"
-rsa = { version = "0.9", features = ["serde", "pem"] }
+rsa = { version = "0.9", features = ["serde", "pem", "sha2"] }
 rand = "0.8"
 nom = "7.1"
 chrono = "0.4"
@@ -25,3 +25,4 @@ async-trait = "0.1"
 sha2 = "0.10"
 base64 = "0.21.3"
 reqwest = { version = "0.11.20", default-features = false, features = ["rustls-tls", "json", "gzip"] }
+ring = "0.16.20"
