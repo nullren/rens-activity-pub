@@ -1,14 +1,12 @@
+use rsa::pkcs1v15::{Signature, SigningKey, VerifyingKey};
 use rsa::pkcs8::{DecodePublicKey, EncodePublicKey};
-// use rsa::pkcs1v15::{Signature, SigningKey, VerifyingKey};
-use rsa::pss::{Signature, SigningKey, VerifyingKey};
 use rsa::signature::{RandomizedSigner, SignatureEncoding, Verifier};
 use rsa::{RsaPrivateKey, RsaPublicKey};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
-type DIGEST = sha2::Sha256; // can be used with rsa::pss
-
 const BITS: usize = 2048;
+type DIGEST = sha2::Sha256;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Key {
