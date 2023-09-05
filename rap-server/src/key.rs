@@ -3,10 +3,10 @@ use rsa::pkcs8::{DecodePublicKey, EncodePublicKey};
 use rsa::signature::{RandomizedSigner, SignatureEncoding, Verifier};
 use rsa::{RsaPrivateKey, RsaPublicKey};
 use serde::{Deserialize, Serialize};
+use sha2::Sha256 as DIGEST;
 use std::error::Error;
 
 const BITS: usize = 2048;
-type DIGEST = sha2::Sha256;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Key {
