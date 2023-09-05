@@ -1,8 +1,8 @@
 use rsa::pkcs8::DecodePublicKey;
-use rsa::pss::Signature;
+use rsa::pss::{Signature, SigningKey, VerifyingKey};
 use rsa::signature::RandomizedSigner;
 use rsa::signature::{SignatureEncoding, Verifier};
-use rsa::{pkcs8::EncodePublicKey, RsaPrivateKey};
+use rsa::{pkcs8::EncodePublicKey, RsaPrivateKey, RsaPublicKey};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::error::Error;
@@ -36,7 +36,7 @@ impl Key {
 
     pub fn sign(&self, data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
         let mut rng = rand::thread_rng();
-        let signer = rsa::pss::SigningKey::<Sha256>::new(self.private_key.clone());
+        let signer = SigningKey::<Sha256>::new(self.private_key.clone());
         let sig = signer.try_sign_with_rng(&mut rng, data)?;
         Ok(sig.to_vec())
     }
@@ -73,15 +73,14 @@ impl PublicKey {
     }
 
     pub fn to_rsa_public_key(&self) -> Result<rsa::RsaPublicKey, Box<dyn Error>> {
-        Ok(rsa::RsaPublicKey::from_public_key_pem(
-            &self.public_key_pem,
-        )?)
+        Ok(RsaPublicKey::from_public_key_pem(&self.public_key_pem)?)
     }
 
     pub fn verify(&self, data: &[u8], sig: &[u8]) -> Result<(), Box<dyn Error>> {
         let public_key = self.to_rsa_public_key()?;
         let sig: Signature = sig.try_into()?;
-        rsa::pss::VerifyingKey::<Sha256>::new(public_key).verify(data, &sig)?;
+        let verifier = VerifyingKey::<Sha256>::new(public_key);
+        verifier.verify(data, &sig)?;
         Ok(())
     }
 }
