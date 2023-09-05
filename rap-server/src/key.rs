@@ -1,8 +1,10 @@
 use rsa::pkcs8::DecodePublicKey;
-use rsa::traits::SignatureScheme;
-use rsa::{pkcs8::EncodePublicKey, Pss, RsaPrivateKey};
+use rsa::pss::Signature;
+use rsa::signature::RandomizedSigner;
+use rsa::signature::{SignatureEncoding, Verifier};
+use rsa::{pkcs8::EncodePublicKey, RsaPrivateKey};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+use sha2::Sha256;
 use std::error::Error;
 
 const BITS: usize = 2048;
@@ -33,14 +35,10 @@ impl Key {
     }
 
     pub fn sign(&self, data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
-        let pss = Pss::new::<sha2::Sha256>();
         let mut rng = rand::thread_rng();
-
-        let mut hasher = Sha256::new();
-        hasher.update(data);
-        let hashed = hasher.finalize();
-
-        Ok(pss.sign(Some(&mut rng), &self.private_key, &hashed)?)
+        let signer = rsa::pss::SigningKey::<Sha256>::new(self.private_key.clone());
+        let sig = signer.try_sign_with_rng(&mut rng, data)?;
+        Ok(sig.to_vec())
     }
 }
 
@@ -82,13 +80,8 @@ impl PublicKey {
 
     pub fn verify(&self, data: &[u8], sig: &[u8]) -> Result<(), Box<dyn Error>> {
         let public_key = self.to_rsa_public_key()?;
-        let pss = Pss::new::<sha2::Sha256>();
-
-        let mut hasher = Sha256::new();
-        hasher.update(data);
-        let hashed = hasher.finalize();
-
-        pss.verify(&public_key, &hashed, sig)?;
+        let sig: Signature = sig.try_into()?;
+        rsa::pss::VerifyingKey::<Sha256>::new(public_key).verify(data, &sig)?;
         Ok(())
     }
 }

@@ -13,49 +13,11 @@ pub async fn json(
     headers: HeaderMap,
     Path(actor): Path<PersonId>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let signature = header_str(&headers, "signature")?;
-    let signature = Signature::from_headers(signature).map_err(|e| {
-        warn!("Error parsing signature: {}", e);
-        (
-            StatusCode::BAD_REQUEST,
-            format!("Error parsing signature: {}", e),
-        )
-    })?;
-
-    let decoded_signature = general_purpose::STANDARD
-        .decode(&signature.signature)
-        .map_err(|e| {
-            warn!("Error decoding signature: {}", e);
-            (
-                StatusCode::BAD_REQUEST,
-                format!("Error decoding signature: {}", e),
-            )
-        })?;
-
-    let comparison = rebuild_sig_str(&actor, &headers, &signature);
-
-    PublicKey::from_remote(&signature.key_id)
-        .await
-        .map_err(|e| {
-            warn!("Error loading public key: {}", e);
-            (
-                StatusCode::BAD_REQUEST,
-                format!("Error loading public key: {}", e),
-            )
-        })?
-        .verify(comparison.as_bytes(), &decoded_signature)
-        .map_err(|e| {
-            warn!("Error verifying signature: {}. {:?}", e, headers);
-            (
-                StatusCode::BAD_REQUEST,
-                format!("Error verifying signature: {}", e),
-            )
-        })?;
+    verify_headers(&headers, &actor).await?;
 
     // let date = chrono::Utc::now().to_rfc2822();
     Err((StatusCode::NOT_IMPLEMENTED, "Not implemented".to_string()))
 }
-
 fn header_str<'a>(headers: &'a HeaderMap, name: &str) -> Result<&'a str, (StatusCode, String)> {
     headers
         .get(name)
@@ -86,6 +48,63 @@ fn rebuild_sig_str(account: &PersonId, headers: &HeaderMap, signature: &Signatur
         })
         .collect::<Vec<String>>()
         .join("\n")
+}
+
+async fn verify_headers(headers: &HeaderMap, actor: &PersonId) -> Result<(), (StatusCode, String)> {
+    let signature = header_str(&headers, "signature")?;
+    let signature = Signature::from_headers(signature).map_err(|e| {
+        warn!("Error parsing signature: {}", e);
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Error parsing signature: {}", e),
+        )
+    })?;
+
+    let decoded_signature = base64_decode(&signature.signature).map_err(|e| {
+        warn!("Error decoding signature: {}", e);
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Error decoding signature: {}", e),
+        )
+    })?;
+
+    let comparison = rebuild_sig_str(&actor, &headers, &signature);
+
+    let pubkey = PublicKey::from_remote(&signature.key_id)
+        .await
+        .map_err(|e| {
+            warn!("Error loading public key: {}", e);
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Error loading public key: {}", e),
+            )
+        })?;
+
+    println!("pubkey: {}", serde_json::to_string(&pubkey).unwrap());
+    println!("comparison: {}", comparison);
+
+    verify_signature(pubkey, &decoded_signature, comparison.as_bytes()).map_err(|e| {
+        warn!("Error verifying signature: {}. {:?}", e, headers);
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Error verifying signature: {}", e),
+        )
+    })?;
+
+    Ok(())
+}
+
+fn verify_signature(
+    pubkey: PublicKey,
+    signature: &[u8],
+    data: &[u8],
+) -> Result<(), Box<dyn std::error::Error>> {
+    pubkey.verify(signature, data)
+}
+
+fn base64_decode<T: AsRef<[u8]>>(data: T) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let decoded = general_purpose::STANDARD.decode(data)?;
+    Ok(decoded)
 }
 
 #[cfg(test)]
@@ -129,5 +148,68 @@ mod tests {
             result, expected_result,
             "Rebuilt signature string did not match expected string"
         );
+    }
+
+    // #[tokio::test]
+    async fn _test_verify_headers_from_remote() {
+        // Create a mock HeaderMap
+        let mut headers = HeaderMap::new();
+        // headers from: {"host": "ap.rens.page", "connection": "close", "user-agent": "http.rb/5.1.1 (Mastodon/4.1.6; +https://hotdog.place/)", "date": "Mon, 04 Sep 2023 20:49:38 GMT", "accept-encoding": "gzip", "digest": "SHA-256=x0QZ2hdf3slWOdA4/DyxLEv4uEzU/FgjP9ho8EzR8sk=", "content-type": "application/activity+json", "signature": "keyId=\"https://hotdog.place/users/renning#main-key\",algorithm=\"rsa-sha256\",headers=\"(request-target) host date digest content-type\",signature=\"GAoq49DfHXRwU8N5bwZAVoU3f5fUR5BPaWLVTG/6QlTJB12lRV29KLxN0pMbcHgzKoTWepdPcIPYZXVGR12+VBoSW46bSKVhFZ8thV/I6Sm/Xqmsz46LJNCETODyOvtFYAnagYUBTq5sbBznovWJNaRkM38fQII+oXV3V1Ku9Y10kPXrQL0JwRoNvzrvAzZJBLGKArdBB9yeVgfLAp3NwmZAwawSSBfh73sBqcTgfrZvjN95xvJWfFvveZINV1Fb4EIfFCZJHcNWNLG8d0PEsk5TjFqKuTjkgYWP5xogiepN8BJfPB+QPfdTPlWr+Gos2pDgo83sna5NehHowgkDiA==\"", "x-request-id": "8a10afb4-180b-4599-85a7-d987e92c0086", "x-forwarded-for": "141.95.205.41", "x-forwarded-proto": "https", "x-forwarded-port": "443", "via": "1.1 vegur", "connect-time": "0", "x-request-start": "1693860578252", "total-route-time": "0", "content-length": "222"}
+        headers.insert("host", HeaderValue::from_static("ap.rens.page"));
+        headers.insert("connection", HeaderValue::from_static("close"));
+        headers.insert(
+            "user-agent",
+            HeaderValue::from_static("http.rb/5.1.1 (Mastodon/4.1.6; +https://hotdog.place/)"),
+        );
+        headers.insert(
+            "date",
+            HeaderValue::from_static("Mon, 04 Sep 2023 20:49:38 GMT"),
+        );
+        headers.insert("accept-encoding", HeaderValue::from_static("gzip"));
+        headers.insert(
+            "digest",
+            HeaderValue::from_static("SHA-256=x0QZ2hdf3slWOdA4/DyxLEv4uEzU/FgjP9ho8EzR8sk="),
+        );
+        headers.insert(
+            "content-type",
+            HeaderValue::from_static("application/activity+json"),
+        );
+        headers.insert(
+            "signature",
+            HeaderValue::from_static("keyId=\"https://hotdog.place/users/renning#main-key\",algorithm=\"rsa-sha256\",headers=\"(request-target) host date digest content-type\",signature=\"GAoq49DfHXRwU8N5bwZAVoU3f5fUR5BPaWLVTG/6QlTJB12lRV29KLxN0pMbcHgzKoTWepdPcIPYZXVGR12+VBoSW46bSKVhFZ8thV/I6Sm/Xqmsz46LJNCETODyOvtFYAnagYUBTq5sbBznovWJNaRkM38fQII+oXV3V1Ku9Y10kPXrQL0JwRoNvzrvAzZJBLGKArdBB9yeVgfLAp3NwmZAwawSSBfh73sBqcTgfrZvjN95xvJWfFvveZINV1Fb4EIfFCZJHcNWNLG8d0PEsk5TjFqKuTjkgYWP5xogiepN8BJfPB+QPfdTPlWr+Gos2pDgo83sna5NehHowgkDiA==\""),
+        );
+        headers.insert(
+            "x-request-id",
+            HeaderValue::from_static("8a10afb4-180b-4599-85a7-d987e92c0086"),
+        );
+        headers.insert("x-forwarded-for", HeaderValue::from_static(""));
+        headers.insert("x-forwarded-proto", HeaderValue::from_static("https"));
+        headers.insert("x-forwarded-port", HeaderValue::from_static("443"));
+        headers.insert("via", HeaderValue::from_static("1.1 vegur"));
+        headers.insert("connect-time", HeaderValue::from_static("0"));
+        headers.insert("x-request-start", HeaderValue::from_static("1693860578252"));
+        headers.insert("total-route-time", HeaderValue::from_static("0"));
+        headers.insert("content-length", HeaderValue::from_static("222"));
+
+        // Create a mock PersonId
+        let person_id = "test2".to_string();
+
+        verify_headers(&headers, &person_id).await.unwrap();
+    }
+
+    #[test]
+    fn test_verify_signature() {
+        let signature = "GAoq49DfHXRwU8N5bwZAVoU3f5fUR5BPaWLVTG/6QlTJB12lRV29KLxN0pMbcHgzKoTWepdPcIPYZXVGR12+VBoSW46bSKVhFZ8thV/I6Sm/Xqmsz46LJNCETODyOvtFYAnagYUBTq5sbBznovWJNaRkM38fQII+oXV3V1Ku9Y10kPXrQL0JwRoNvzrvAzZJBLGKArdBB9yeVgfLAp3NwmZAwawSSBfh73sBqcTgfrZvjN95xvJWfFvveZINV1Fb4EIfFCZJHcNWNLG8d0PEsk5TjFqKuTjkgYWP5xogiepN8BJfPB+QPfdTPlWr+Gos2pDgo83sna5NehHowgkDiA==";
+        let pubkey_json = r#"{"id":"https://hotdog.place/users/renning#main-key","owner":"https://hotdog.place/users/renning","publicKeyPem":"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAokhkD5QZh/eEb1mB9NRx\nfEm/aK05jSveg3X43s8LVoPQYY4030ql+IfHnsRtEJuzH5VWsYovjweT7ButDRX2\nAmk8IS94cqF7frDPDfBrNKJXfapmL7d3VuXU+BGOfLJZBK0NaEXvLK+Tssla4u+G\nUNinYnbOjnXvDOEkTOVpwTpcutHWSZrOcI8AdBXU3dv/c57sKXoIDZbVF9ZWEudL\n6/LsW0bpvXcBDPq1njOC9/WQcgtoe40WF6tROopyTZ/J+jlIKDuySW2/tsTrP6lg\nQ9TBzkj19leFDvCo6oWZ8aD6z8k5N6/ZAVjFtnivujc4rcoyPDPZArhIEP3n6R0d\n2QIDAQAB\n-----END PUBLIC KEY-----\n"}"#;
+        let comparison = r#"comparison: (request-target): post /users/test2/inbox
+host: ap.rens.page
+date: Mon, 04 Sep 2023 20:49:38 GMT
+digest: SHA-256=x0QZ2hdf3slWOdA4/DyxLEv4uEzU/FgjP9ho8EzR8sk=
+content-type: application/activity+json"#;
+
+        let pubkey: PublicKey = serde_json::from_str(pubkey_json).unwrap();
+        let signature = base64_decode(signature).unwrap();
+
+        verify_signature(pubkey, &signature, comparison.as_bytes()).unwrap();
     }
 }
