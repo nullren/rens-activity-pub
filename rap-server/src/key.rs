@@ -146,6 +146,7 @@ mod tests {
 
     #[test]
     fn test_verify_signature() {
+        // https://github.com/mastodon/mastodon/blob/f80f426c57d5a5e1d289372ef7c323741d27c768/app/lib/request.rb#L179C1-L196C6
         let signature = "GAoq49DfHXRwU8N5bwZAVoU3f5fUR5BPaWLVTG/6QlTJB12lRV29KLxN0pMbcHgzKoTWepdPcIPYZXVGR12+VBoSW46bSKVhFZ8thV/I6Sm/Xqmsz46LJNCETODyOvtFYAnagYUBTq5sbBznovWJNaRkM38fQII+oXV3V1Ku9Y10kPXrQL0JwRoNvzrvAzZJBLGKArdBB9yeVgfLAp3NwmZAwawSSBfh73sBqcTgfrZvjN95xvJWfFvveZINV1Fb4EIfFCZJHcNWNLG8d0PEsk5TjFqKuTjkgYWP5xogiepN8BJfPB+QPfdTPlWr+Gos2pDgo83sna5NehHowgkDiA==";
         let pubkey_json = r#"{"id":"https://hotdog.place/users/renning#main-key","owner":"https://hotdog.place/users/renning","publicKeyPem":"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAokhkD5QZh/eEb1mB9NRx\nfEm/aK05jSveg3X43s8LVoPQYY4030ql+IfHnsRtEJuzH5VWsYovjweT7ButDRX2\nAmk8IS94cqF7frDPDfBrNKJXfapmL7d3VuXU+BGOfLJZBK0NaEXvLK+Tssla4u+G\nUNinYnbOjnXvDOEkTOVpwTpcutHWSZrOcI8AdBXU3dv/c57sKXoIDZbVF9ZWEudL\n6/LsW0bpvXcBDPq1njOC9/WQcgtoe40WF6tROopyTZ/J+jlIKDuySW2/tsTrP6lg\nQ9TBzkj19leFDvCo6oWZ8aD6z8k5N6/ZAVjFtnivujc4rcoyPDPZArhIEP3n6R0d\n2QIDAQAB\n-----END PUBLIC KEY-----\n"}"#;
         let comparison = r#"comparison: (request-target): post /users/test2/inbox
