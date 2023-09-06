@@ -5,14 +5,20 @@ use crate::utils::base64_decode;
 use axum::extract::Path;
 use axum::http::{HeaderMap, StatusCode};
 use axum::Json;
-use log::warn;
+use log::{info, warn};
 use serde_json::Value;
 
 pub async fn json(
     headers: HeaderMap,
     Path(actor): Path<PersonId>,
+    Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     verify_headers(&headers, &actor).await?;
+
+    info!(
+        "Received activity: {}",
+        serde_json::to_string(&body).unwrap()
+    );
 
     // let date = chrono::Utc::now().to_rfc2822();
     Err((StatusCode::NOT_IMPLEMENTED, "Not implemented".to_string()))
