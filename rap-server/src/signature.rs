@@ -52,30 +52,6 @@ fn params(input: &str) -> IResult<&str, Vec<(&str, String)>> {
         .map(|(remaining, (_prefix, list))| (remaining, list))
 }
 
-#[cfg(test)]
-mod tests {
-    fn assert_params(input: &str, expected: &[(&str, &str)]) {
-        let (_, parsed) = super::params(input).unwrap();
-        let parsed: Vec<(&str, &str)> = parsed
-            .iter()
-            .map(|(key, value)| (*key, value.as_str()))
-            .collect();
-        assert_eq!(parsed, expected);
-    }
-
-    #[test]
-    fn test_params() {
-        assert_params(
-            r#"keyId="https://example.com/users/Ren\",with,quote",headers="(request-target) host date",signature="base64encodedsignature""#,
-            &[
-                ("keyId", "https://example.com/users/Ren\",with,quote"),
-                ("headers", "(request-target) host date"),
-                ("signature", "base64encodedsignature"),
-            ],
-        );
-    }
-}
-
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Signature {
     pub key_id: String,
@@ -105,5 +81,29 @@ impl Signature {
             headers: headers.split(" ").map(|s| s.to_string()).collect(),
             signature: signature.to_string(),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    fn assert_params(input: &str, expected: &[(&str, &str)]) {
+        let (_, parsed) = super::params(input).unwrap();
+        let parsed: Vec<(&str, &str)> = parsed
+            .iter()
+            .map(|(key, value)| (*key, value.as_str()))
+            .collect();
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_params() {
+        assert_params(
+            r#"keyId="https://example.com/users/Ren\",with,quote",headers="(request-target) host date",signature="base64encodedsignature""#,
+            &[
+                ("keyId", "https://example.com/users/Ren\",with,quote"),
+                ("headers", "(request-target) host date"),
+                ("signature", "base64encodedsignature"),
+            ],
+        );
     }
 }
