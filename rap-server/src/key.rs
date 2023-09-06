@@ -1,39 +1,36 @@
 use crate::crypto;
-use rsa::pkcs8::EncodePublicKey;
-use rsa::signature::{RandomizedSigner, SignatureEncoding};
-use rsa::RsaPrivateKey;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-
-const BITS: usize = 2048;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Key {
     owner: String,
     #[serde(rename = "privateKey")]
-    private_key: RsaPrivateKey,
+    private_key_pem: String,
+    #[serde(rename = "publicKey")]
+    public_key_pem: String,
 }
 
 impl Key {
     pub fn new(owner: String) -> Result<Self, Box<dyn Error>> {
-        let mut rng = rand::thread_rng();
-        let private_key = RsaPrivateKey::new(&mut rng, BITS)?;
-        Ok(Self { owner, private_key })
+        let (private_key_pem, public_key_pem) = crypto::generate_keypair()?;
+        Ok(Self {
+            owner,
+            private_key_pem,
+            public_key_pem,
+        })
     }
 
     pub fn public_key(&self) -> Result<PublicKey, Box<dyn Error>> {
         Ok(PublicKey {
             id: format!("{}/#main-key", self.owner),
             owner: self.owner.clone(),
-            public_key_pem: self
-                .private_key
-                .to_public_key()
-                .to_public_key_pem(rsa::pkcs8::LineEnding::LF)?,
+            public_key_pem: self.public_key_pem.clone(),
         })
     }
 
     pub fn sign(&self, data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
-        Ok(crypto::sign(self.private_key.clone(), data)?)
+        Ok(crypto::sign(&self.private_key_pem, data)?)
     }
 }
 

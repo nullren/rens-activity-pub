@@ -1,25 +1,45 @@
 use rsa::pkcs1v15::{Signature, SigningKey, VerifyingKey};
-use rsa::pkcs8::DecodePublicKey;
+use rsa::pkcs8::{
+    DecodePrivateKey, DecodePublicKey, EncodePrivateKey, EncodePublicKey, LineEnding,
+};
 use rsa::signature::{RandomizedSigner, SignatureEncoding, Verifier};
 use rsa::{RsaPrivateKey, RsaPublicKey};
 use sha2::Sha256;
 use std::error::Error;
 
-pub fn sign<T: AsRef<[u8]>>(
-    private_key: RsaPrivateKey,
-    data: T,
-) -> Result<Vec<u8>, Box<dyn Error>> {
-    let signer = SigningKey::<Sha256>::new(private_key.clone());
+const KEY_SIZE: usize = 2048;
+pub fn generate_keypair() -> Result<(String, String), Box<dyn Error>> {
     let mut rng = rand::thread_rng();
-    let sig = signer.try_sign_with_rng(&mut rng, data)?;
+    let bits = KEY_SIZE;
+    let private_key = RsaPrivateKey::new(&mut rng, bits)?;
+    let private_key_pem = private_key.to_pkcs8_pem(LineEnding::LF)?;
+    let public_key_pem = private_key
+        .to_public_key()
+        .to_public_key_pem(LineEnding::LF)?;
+    Ok((private_key_pem.to_string(), public_key_pem))
+}
+
+pub fn sign<S, T>(key_pem: S, data: T) -> Result<Vec<u8>, Box<dyn Error>>
+where
+    S: AsRef<str>,
+    T: AsRef<[u8]>,
+{
+    let key = RsaPrivateKey::from_pkcs8_pem(key_pem.as_ref())?;
+    let signer = SigningKey::<Sha256>::new(key);
+    let mut rng = rand::thread_rng();
+    let sig = signer.try_sign_with_rng(&mut rng, data.as_ref())?;
     Ok(sig.to_vec())
 }
 
-pub fn verify<T: AsRef<[u8]>>(key_pem: &str, msg: T, sig: T) -> Result<(), Box<dyn Error>> {
-    let key = RsaPublicKey::from_public_key_pem(key_pem)?;
-    let sig = Signature::try_from(sig)?;
+pub fn verify<S, T>(key_pem: S, msg: T, sig: T) -> Result<(), Box<dyn Error>>
+where
+    S: AsRef<str>,
+    T: AsRef<[u8]>,
+{
+    let key = RsaPublicKey::from_public_key_pem(key_pem.as_ref())?;
+    let sig = Signature::try_from(sig.as_ref())?;
     let verifier = VerifyingKey::<Sha256>::new(key);
-    verifier.verify(msg, &sig)?;
+    verifier.verify(msg.as_ref(), &sig)?;
     Ok(())
 }
 
