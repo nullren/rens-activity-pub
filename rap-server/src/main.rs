@@ -82,7 +82,7 @@ async fn request_logger<B>(
     let start = std::time::Instant::now();
     let method = request.method().clone();
     let uri = request.uri().clone();
-    let path = uri.path().clone();
+    let path = uri.path().to_string();
     let query = uri.query().unwrap_or("");
     let response = next.run(request).await;
     // log request and response details here

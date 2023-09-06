@@ -29,7 +29,7 @@ impl Person {
         let id = format!("https://ap.rens.page/users/{}", id);
         Ok(Self {
             id: id.clone(),
-            key: key::Key::new(id.clone())?,
+            key: key::Key::new(id)?,
         })
     }
 }

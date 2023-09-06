@@ -30,7 +30,7 @@ impl Key {
     }
 
     pub fn sign(&self, data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
-        Ok(crypto::sign(&self.private_key_pem, data)?)
+        crypto::sign(&self.private_key_pem, data)
     }
 }
 
@@ -65,7 +65,7 @@ impl PublicKey {
     }
 
     pub fn verify(&self, data: &[u8], sig: &[u8]) -> Result<(), Box<dyn Error>> {
-        Ok(crypto::verify(&self.public_key_pem, data, sig)?)
+        crypto::verify(&self.public_key_pem, data, sig)
     }
 }
 

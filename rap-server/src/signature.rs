@@ -77,9 +77,9 @@ impl Signature {
         let headers = headers.ok_or("headers not found")?;
         let signature = signature.ok_or("signature not found")?;
         Ok(Self {
-            key_id: key_id.to_string(),
-            headers: headers.split(" ").map(|s| s.to_string()).collect(),
-            signature: signature.to_string(),
+            key_id,
+            headers: headers.split(' ').map(|s| s.to_string()).collect(),
+            signature,
         })
     }
 }

@@ -16,8 +16,8 @@ pub async fn json(
     webfinger: Query<Webfinger>,
     Extension(cfg): Extension<Config>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let domain = cfg.domain.clone();
     let resource = webfinger.resource.clone().to_lowercase();
+    let domain = cfg.domain;
 
     let error = || {
         warn!("Invalid webfinger resource");
@@ -29,7 +29,7 @@ pub async fn json(
         .ok_or_else(error)?
         .strip_suffix(&domain)
         .ok_or_else(error)?
-        .strip_suffix("@")
+        .strip_suffix('@')
         .ok_or_else(error)?;
 
     // TODO: check if id exists

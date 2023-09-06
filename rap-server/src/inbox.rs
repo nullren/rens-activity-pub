@@ -51,7 +51,7 @@ fn rebuild_sig_str(account: &PersonId, headers: &HeaderMap, signature: &Signatur
 }
 
 async fn verify_headers(headers: &HeaderMap, actor: &PersonId) -> Result<(), (StatusCode, String)> {
-    let signature = header_str(&headers, "signature")?;
+    let signature = header_str(headers, "signature")?;
     let signature = Signature::from_headers(signature).map_err(|e| {
         warn!("Error parsing signature: {}", e);
         (
@@ -68,7 +68,7 @@ async fn verify_headers(headers: &HeaderMap, actor: &PersonId) -> Result<(), (St
         )
     })?;
 
-    let comparison = rebuild_sig_str(&actor, &headers, &signature);
+    let comparison = rebuild_sig_str(actor, headers, &signature);
 
     let pubkey = PublicKey::from_remote(&signature.key_id)
         .await
