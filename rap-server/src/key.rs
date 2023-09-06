@@ -1,11 +1,9 @@
-use rsa::pkcs1v15::{SigningKey};
-use rsa::pkcs8::{EncodePublicKey};
-use rsa::signature::{RandomizedSigner, SignatureEncoding};
-use rsa::{RsaPrivateKey};
-use serde::{Deserialize, Serialize};
-use sha2::Sha256 as DIGEST;
-use std::error::Error;
 use crate::crypto;
+use rsa::pkcs8::EncodePublicKey;
+use rsa::signature::{RandomizedSigner, SignatureEncoding};
+use rsa::RsaPrivateKey;
+use serde::{Deserialize, Serialize};
+use std::error::Error;
 
 const BITS: usize = 2048;
 
@@ -35,10 +33,7 @@ impl Key {
     }
 
     pub fn sign(&self, data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
-        let mut rng = rand::thread_rng();
-        let signer = SigningKey::<DIGEST>::new(self.private_key.clone());
-        let sig = signer.try_sign_with_rng(&mut rng, data)?;
-        Ok(sig.to_vec())
+        Ok(crypto::sign(self.private_key.clone(), data)?)
     }
 }
 

@@ -1,13 +1,13 @@
 extern crate core;
 
 mod config;
+mod crypto;
 mod inbox;
 mod key;
 mod signature;
 mod users;
 mod utils;
 mod webfinger;
-mod crypto;
 
 use crate::config::Config;
 use crate::users::InMemoryPeopleStore;

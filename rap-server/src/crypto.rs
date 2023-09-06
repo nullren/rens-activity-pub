@@ -1,15 +1,21 @@
-use std::error::Error;
-use rsa::pkcs1v15::{Signature, VerifyingKey};
+use rsa::pkcs1v15::{Signature, SigningKey, VerifyingKey};
 use rsa::pkcs8::DecodePublicKey;
-use rsa::RsaPublicKey;
-use rsa::signature::Verifier;
+use rsa::signature::{RandomizedSigner, SignatureEncoding, Verifier};
+use rsa::{RsaPrivateKey, RsaPublicKey};
 use sha2::Sha256;
+use std::error::Error;
 
-pub fn verify(
-    key_pem: &str,
-    msg: &[u8],
-    sig: &[u8],
-) -> Result<(), Box<dyn Error>> {
+pub fn sign<T: AsRef<[u8]>>(
+    private_key: RsaPrivateKey,
+    data: T,
+) -> Result<Vec<u8>, Box<dyn Error>> {
+    let signer = SigningKey::<Sha256>::new(private_key.clone());
+    let mut rng = rand::thread_rng();
+    let sig = signer.try_sign_with_rng(&mut rng, data)?;
+    Ok(sig.to_vec())
+}
+
+pub fn verify<T: AsRef<[u8]>>(key_pem: &str, msg: T, sig: T) -> Result<(), Box<dyn Error>> {
     let key = RsaPublicKey::from_public_key_pem(key_pem)?;
     let sig = Signature::try_from(sig)?;
     let verifier = VerifyingKey::<Sha256>::new(key);
