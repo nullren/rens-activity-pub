@@ -31,10 +31,11 @@ where
     Ok(sig.to_vec())
 }
 
-pub fn verify<S, T>(key_pem: S, msg: T, sig: T) -> Result<(), Box<dyn Error>>
+pub fn verify<S, T1, T2>(key_pem: S, msg: T1, sig: T2) -> Result<(), Box<dyn Error>>
 where
     S: AsRef<str>,
-    T: AsRef<[u8]>,
+    T1: AsRef<[u8]>,
+    T2: AsRef<[u8]>,
 {
     let key = RsaPublicKey::from_public_key_pem(key_pem.as_ref())?;
     let sig = Signature::try_from(sig.as_ref())?;
@@ -55,5 +56,21 @@ mod tests {
         let sig = base64_decode(sig).unwrap();
 
         super::verify(pubkey, comparison.as_bytes(), &sig).unwrap();
+    }
+
+    #[test]
+    fn test_sign_and_verify() {
+        let (private_key_pem, public_key_pem) = super::generate_keypair().unwrap();
+        let data = b"some data to sign";
+        let wrong_data = b"some other data";
+
+        // Sign the data
+        let signature = super::sign(&private_key_pem, data).unwrap();
+
+        // Try to verify with wrong data
+        super::verify(&public_key_pem, wrong_data, &signature).unwrap_err();
+
+        // Verify with correct data
+        super::verify(&public_key_pem, data, &signature).unwrap();
     }
 }
