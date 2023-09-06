@@ -38,6 +38,7 @@ fn rebuild_sig_str(account: &PersonId, headers: &HeaderMap, signature: &Signatur
         .iter()
         .map(|header| {
             if header == "(request-target)" {
+                // we can take this shortcut because we run this endpoint
                 format!("(request-target): post /users/{}/inbox", account)
             } else {
                 let header = header.to_lowercase();
