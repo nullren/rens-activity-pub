@@ -83,7 +83,7 @@ async fn verify_headers(headers: &HeaderMap, actor: &PersonId) -> Result<(), (St
     println!("comparison: {}", comparison);
 
     pubkey
-        .verify(&decoded_signature, comparison.as_bytes())
+        .verify(comparison.as_bytes(), &decoded_signature)
         .map_err(|e| {
             warn!("Error verifying signature: {}. {:?}", e, headers);
             (

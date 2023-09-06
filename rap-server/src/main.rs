@@ -7,6 +7,7 @@ mod signature;
 mod users;
 mod utils;
 mod webfinger;
+mod crypto;
 
 use crate::config::Config;
 use crate::users::InMemoryPeopleStore;

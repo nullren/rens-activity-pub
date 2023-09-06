@@ -1,10 +1,11 @@
-use rsa::pkcs1v15::{Signature, SigningKey, VerifyingKey};
-use rsa::pkcs8::{DecodePublicKey, EncodePublicKey};
-use rsa::signature::{RandomizedSigner, SignatureEncoding, Verifier};
-use rsa::{RsaPrivateKey, RsaPublicKey};
+use rsa::pkcs1v15::{SigningKey};
+use rsa::pkcs8::{EncodePublicKey};
+use rsa::signature::{RandomizedSigner, SignatureEncoding};
+use rsa::{RsaPrivateKey};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256 as DIGEST;
 use std::error::Error;
+use crate::crypto;
 
 const BITS: usize = 2048;
 
@@ -71,16 +72,8 @@ impl PublicKey {
         Ok(resp.public_key)
     }
 
-    pub fn to_rsa_public_key(&self) -> Result<rsa::RsaPublicKey, Box<dyn Error>> {
-        Ok(RsaPublicKey::from_public_key_pem(&self.public_key_pem)?)
-    }
-
     pub fn verify(&self, data: &[u8], sig: &[u8]) -> Result<(), Box<dyn Error>> {
-        let public_key = self.to_rsa_public_key()?;
-        let sig: Signature = sig.try_into()?;
-        let verifier = VerifyingKey::<DIGEST>::new(public_key);
-        verifier.verify(data, &sig)?;
-        Ok(())
+        Ok(crypto::verify(&self.public_key_pem, data, sig)?)
     }
 }
 
@@ -149,7 +142,7 @@ mod tests {
         // https://github.com/mastodon/mastodon/blob/f80f426c57d5a5e1d289372ef7c323741d27c768/app/lib/request.rb#L179C1-L196C6
         let signature = "GAoq49DfHXRwU8N5bwZAVoU3f5fUR5BPaWLVTG/6QlTJB12lRV29KLxN0pMbcHgzKoTWepdPcIPYZXVGR12+VBoSW46bSKVhFZ8thV/I6Sm/Xqmsz46LJNCETODyOvtFYAnagYUBTq5sbBznovWJNaRkM38fQII+oXV3V1Ku9Y10kPXrQL0JwRoNvzrvAzZJBLGKArdBB9yeVgfLAp3NwmZAwawSSBfh73sBqcTgfrZvjN95xvJWfFvveZINV1Fb4EIfFCZJHcNWNLG8d0PEsk5TjFqKuTjkgYWP5xogiepN8BJfPB+QPfdTPlWr+Gos2pDgo83sna5NehHowgkDiA==";
         let pubkey_json = r#"{"id":"https://hotdog.place/users/renning#main-key","owner":"https://hotdog.place/users/renning","publicKeyPem":"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAokhkD5QZh/eEb1mB9NRx\nfEm/aK05jSveg3X43s8LVoPQYY4030ql+IfHnsRtEJuzH5VWsYovjweT7ButDRX2\nAmk8IS94cqF7frDPDfBrNKJXfapmL7d3VuXU+BGOfLJZBK0NaEXvLK+Tssla4u+G\nUNinYnbOjnXvDOEkTOVpwTpcutHWSZrOcI8AdBXU3dv/c57sKXoIDZbVF9ZWEudL\n6/LsW0bpvXcBDPq1njOC9/WQcgtoe40WF6tROopyTZ/J+jlIKDuySW2/tsTrP6lg\nQ9TBzkj19leFDvCo6oWZ8aD6z8k5N6/ZAVjFtnivujc4rcoyPDPZArhIEP3n6R0d\n2QIDAQAB\n-----END PUBLIC KEY-----\n"}"#;
-        let comparison = r#"comparison: (request-target): post /users/test2/inbox
+        let comparison = r#"(request-target): post /users/test2/inbox
 host: ap.rens.page
 date: Mon, 04 Sep 2023 20:49:38 GMT
 digest: SHA-256=x0QZ2hdf3slWOdA4/DyxLEv4uEzU/FgjP9ho8EzR8sk=
@@ -158,6 +151,18 @@ content-type: application/activity+json"#;
         let pubkey: PublicKey = serde_json::from_str(pubkey_json).unwrap();
         let signature = base64_decode(signature).unwrap();
 
-        pubkey.verify(&signature, comparison.as_bytes()).unwrap();
+        pubkey.verify(comparison.as_bytes(), &signature).unwrap();
+    }
+
+    #[test]
+    fn test_ruby_generated_signature() {
+        let sig = "IwFW79lM9f7d0fZjHorNs2pPpAhMunJE9x2MYPIkVmS2XcCusRxD37sjjY6neI56x9MJt0iQLQpYcutHLYq1TYA1e4LYuARAleC0jrBh5uN1EKZrQ39htz0iKLbkl2U+zjl09c0rPN98KNGPZKgPSaJg5yEwqYYKAseluhiQRt5uuVJJZEk1E/b1KwZW0/U4QQFclu0vixq5hFi7vRwP8PWZV/VzCoCk/jS6/2P8O02ol+iZkdvKVgd2eO4phHsjeD6pZMbLnGoZ+aODLBFys7h7pcYRn1smCoDppbAb3xbQqpzLJ9ZLLv5B5r+BO9KFk6NLWd5xuV8IXcEjowIe5w==";
+        let sig = base64_decode(sig).unwrap();
+
+        let pubkey_json = r#"{"id":"","owner":"","publicKeyPem":"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsySwvshQIlMYLP4O/a/i\ncm25Jc7lOCx40WUYOVzIS/8YUeZw3mN5IfZURRWybB5ESwZCTKlqqgQs3s/WCCqD\ndER9BGLjph14ywCsSij4yFToHg4rAkzwnuiEBpjwb9TZxoWclQ6w7/L90zuphidA\nnCgSoxqNJ+L0xtJ92wf4vHQeuimKgna76I2VHFmgD9JOaD2ISL6+9D4v2lj6biNM\n/bXffipv6LxuM6p582BI2PH7OjBj617kd8DetYn71MpAMj3Kq8zhFQcbQwIpXIXe\nRYcQ8pCEQMHNYSLNhYfaFdgQJqy/OkUlIOrGIVA/XdVcznwHsmfzVgpZLQcG4gH6\nAwIDAQAB\n-----END PUBLIC KEY-----\n"}"#;
+        let pubkey: PublicKey = serde_json::from_str(pubkey_json).unwrap();
+
+        let comparison = "Hello world";
+        pubkey.verify(comparison.as_bytes(), &sig).unwrap();
     }
 }
