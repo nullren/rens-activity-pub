@@ -130,6 +130,8 @@ fn rebuild_sig_str(account: &PersonId, headers: &HeaderMap, signature: &Signatur
 }
 
 async fn verify_headers(headers: &HeaderMap, actor: &PersonId) -> Result<(), WebError> {
+    // TODO: check date header and other ways to prevent replay attacks
+
     let signature = header_str(headers, "signature")?;
     let signature = Signature::from_headers(signature)
         .map_err(|e| web_err_400(format!("Error parsing signature: {}", e)))?;
