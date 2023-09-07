@@ -1,9 +1,8 @@
 use axum::extract::Query;
-use axum::http::StatusCode;
 use axum::{Extension, Json};
-use log::warn;
 use serde_json::{json, Value};
 
+use crate::utils::{web_err_400, WebError};
 use crate::Config;
 use serde::Deserialize;
 
@@ -15,14 +14,11 @@ pub struct Webfinger {
 pub async fn json(
     webfinger: Query<Webfinger>,
     Extension(cfg): Extension<Config>,
-) -> Result<Json<Value>, (StatusCode, String)> {
+) -> Result<Json<Value>, WebError> {
     let resource = webfinger.resource.clone().to_lowercase();
     let domain = cfg.domain;
 
-    let error = || {
-        warn!("Invalid webfinger resource");
-        (StatusCode::BAD_REQUEST, "Invalid resource".to_string())
-    };
+    let error = || web_err_400(format!("Invalid resource: {}", resource));
 
     let id = resource
         .strip_prefix("acct:")

@@ -1,13 +1,12 @@
 use axum::extract::Path;
-use axum::http::StatusCode;
 use axum::{Extension, Json};
-use log::error;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::error::Error;
 use std::sync::Arc;
 
 use crate::key;
+use crate::utils::{web_err_500, WebError};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
@@ -37,14 +36,11 @@ impl Person {
 pub async fn json(
     Path(actor): Path<PersonId>,
     Extension(people): Extension<Arc<dyn PeopleStore>>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-    let person = people.get_or_create(&actor).await.map_err(|e| {
-        error!("Error getting person: {}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Error getting person: {}", e),
-        )
-    })?;
+) -> Result<Json<Value>, WebError> {
+    let person = people
+        .get_or_create(&actor)
+        .await
+        .map_err(|e| web_err_500(format!("Error getting person: {}", e)))?;
     Ok(Json(json!({
         "@context": [
             "https://www.w3.org/ns/activitystreams",
@@ -55,10 +51,7 @@ pub async fn json(
         "type": "Person",
         "inbox": format!("{}/inbox", person.id),
         "publicKey": person.key.public_key().map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Error getting public key: {}", e),
-            )
+            web_err_500(format!("Error getting public key: {}", e))
         })?,
     })))
 }

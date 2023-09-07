@@ -5,6 +5,7 @@ mod crypto;
 mod inbox;
 mod key;
 mod signature;
+mod signed;
 mod users;
 mod utils;
 mod webfinger;
