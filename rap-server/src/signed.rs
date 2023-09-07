@@ -6,6 +6,7 @@ use axum::async_trait;
 use axum::extract::{FromRequestParts, Path};
 use axum::http::request::Parts;
 use axum::http::HeaderMap;
+use log::debug;
 
 /// # Signed Extractor
 ///
@@ -142,8 +143,8 @@ async fn verify_headers(headers: &HeaderMap, actor: &PersonId) -> Result<(), Web
         .await
         .map_err(|e| web_err_400(format!("Error loading public key: {}", e)))?;
 
-    println!("pubkey: {}", serde_json::to_string(&pubkey).unwrap());
-    println!("comparison: {}", comparison);
+    debug!("pubkey: {}", serde_json::to_string(&pubkey).unwrap());
+    debug!("comparison: {}", comparison);
 
     pubkey
         .verify(comparison.as_bytes(), &decoded_signature)
