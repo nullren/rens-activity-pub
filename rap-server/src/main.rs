@@ -45,6 +45,8 @@ async fn main() {
         .with_default_metrics()
         .build_pair();
 
+    // TODO: create a background task processor
+
     let people: Arc<dyn users::PeopleStore> = Arc::new(InMemoryPeopleStore::new());
 
     let app = Router::new()
