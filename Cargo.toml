@@ -5,6 +5,15 @@ members = ["crates/*"]
 version = "0.2.0"
 authors = ["Renning Bruns <ren@renmail.net>"]
 description = "Ren's ActivityPub stuff"
+edition = "2021"
+rust-version = "1.70"
+license = "MIT"
 
 [workspace.dependencies]
+# local crates
+rap-client-cli = { path = "./crates/rap-client-cli" }
+rap-core = { path = "./crates/rap-core" }
+rap-server = { path = "./crates/rap-server" }
+
+# non-local crates
 clap = { version = "4", features = ["default", "derive", "env"] }

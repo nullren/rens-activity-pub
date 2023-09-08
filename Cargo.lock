@@ -1345,6 +1345,7 @@ name = "rap-client-cli"
 version = "0.2.0"
 dependencies = [
  "clap",
+ "rap-core",
  "reqwest",
 ]
 

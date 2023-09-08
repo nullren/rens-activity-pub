@@ -40,11 +40,11 @@ fn main() {
                 )
                 .send()
                 .unwrap();
-            let resp = resp.json::<rens_activity_pub::types::Actor>().unwrap();
+            let resp = resp.json::<rap_core::types::Actor>().unwrap();
             println!("{:#?}", resp)
         }
         None => {
-            println!("Hello, world! {}", rens_activity_pub::add(2, 40));
+            println!("Hello, world! {}", rap_core::add(2, 40));
         }
     }
 }

@@ -1,7 +1,12 @@
 [package]
 name = "rap-core"
+description = "TBD"
+
 version.workspace = true
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
