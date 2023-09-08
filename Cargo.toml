@@ -1,5 +1,5 @@
 [workspace]
-members = ["rap-*"]
+members = ["crates/*"]
 
 [workspace.package]
 version = "0.2.0"
@@ -8,11 +8,3 @@ description = "Ren's ActivityPub stuff"
 
 [workspace.dependencies]
 clap = { version = "4", features = ["default", "derive", "env"] }
-
-[package]
-name = "rens-activity-pub"
-version.workspace = true
-edition = "2021"
-
-[dependencies]
-serde = { version = "1", features = ["derive"] }

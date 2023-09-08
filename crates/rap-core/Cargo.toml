@@ -1,0 +1,7 @@
+[package]
+name = "rap-core"
+version.workspace = true
+edition = "2021"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
